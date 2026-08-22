@@ -19,7 +19,7 @@ import sys
 
 import streamlit as st
 import streamlit.components.v1 as components
-from dotenv import load_dotenv
+from dotenv import dotenv_values, load_dotenv
 from openai import OpenAI
 
 import regulation_parser as rp
@@ -200,7 +200,10 @@ def agent_json_to_dashboard_data(agent_json, mode="current"):
 
 def show_warnings(agent_json):
     """분석 상태가 partial 이면 Agent 가 보고한 경고를 안내한다.
-    최대 4줄 높이의 박스로 표시하고, 내용이 넘치면 우측 스크롤바로 확인한다."""
+    최대 4줄 높이의 박스로 표시하고, 내용이 넘치면 우측 스크롤바로 확인한다.
+    setting 에서 '부분 분석 안내 표시' 를 끄면 두 탭 모두 표시하지 않는다."""
+    if not load_settings().get("show_partial", True):
+        return
     if not agent_json or agent_json.get("analysis", {}).get("status") != "partial":
         return
     warnings = agent_json.get("retrieval_report", {}).get("warnings") or []
@@ -302,6 +305,169 @@ def clear_revision_result():
         _save_store(store)
 
 
+# ---------------------------------------------------------------- 앱 설정·비밀번호
+# 설정(부분 분석 표시 여부)은 app_settings.json 에 저장한다.
+# 비밀번호는 .env 와 .streamlit/secrets.toml 모두에 저장(없는 파일은 skip)하고,
+# 조회 우선순위는 .env → .streamlit/secrets.toml 이다.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENV_PATH = os.path.join(BASE_DIR, ".env")
+SECRETS_PATH = os.path.join(BASE_DIR, ".streamlit", "secrets.toml")
+SETTINGS_PATH = os.path.join(BASE_DIR, "app_settings.json")
+PW_ENV_KEYS = {
+    "current": "CURRENT_ANALYSIS_PASSWORD",    # 현행규정 탭: 분석·초기화 비밀번호
+    "revision": "REVISION_ANALYSIS_PASSWORD",  # 제·개정규정 탭: 분석·초기화 비밀번호
+    "settings": "SETTINGS_PASSWORD",           # setting 진입 비밀번호(최초 2465)
+}
+PW_LABELS = {"current": "현행규정", "revision": "제·개정규정", "settings": "setting 진입"}
+DEFAULT_SETTINGS_PASSWORD = "2465"  # setting 진입 비밀번호 미설정 시 최초값
+
+
+def load_settings():
+    """앱 설정 로드(없으면 기본값). show_partial: 부분 분석(파란 박스) 표시 여부."""
+    if os.path.exists(SETTINGS_PATH):
+        try:
+            with open(SETTINGS_PATH, "r", encoding="utf-8") as fp:
+                return json.load(fp)
+        except Exception:
+            return {}
+    return {}
+
+
+def save_settings(settings):
+    tmp = SETTINGS_PATH + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fp:
+        json.dump(settings, fp, ensure_ascii=False, indent=2)
+    os.replace(tmp, SETTINGS_PATH)
+
+
+def get_password(mode):
+    """비밀번호 조회: .env 를 먼저 읽고 없으면 secrets.toml 을 읽는다.
+    setting 진입 비밀번호는 어디에도 없으면 최초값(2465)을 사용한다."""
+    key = PW_ENV_KEYS[mode]
+    val = dotenv_values(ENV_PATH).get(key)  # 파일을 직접 읽어 설정 변경 즉시 반영
+    if not val:
+        try:  # secrets.toml 이 없거나 형식 오류여도 예외 대신 미설정 처리
+            val = st.secrets.get(key)
+        except Exception:
+            val = None
+    if not val and mode == "settings":
+        val = DEFAULT_SETTINGS_PASSWORD
+    return val or None
+
+
+def _update_env(updates):
+    """.env 파일에서 해당 키만 갱신(없으면 추가)하고 나머지 행은 보존한다.
+    파일이 없으면 건너뛴다."""
+    if not os.path.exists(ENV_PATH):
+        return
+    with open(ENV_PATH, "r", encoding="utf-8") as fp:
+        lines = fp.read().splitlines()
+    for key, value in updates.items():
+        new_line = f"{key}={value}"
+        for i, line in enumerate(lines):
+            if line.strip().startswith(key + "="):
+                lines[i] = new_line
+                break
+        else:
+            lines.append(new_line)
+    with open(ENV_PATH, "w", encoding="utf-8") as fp:
+        fp.write("\n".join(lines) + "\n")
+
+
+def _update_secrets(updates):
+    """.streamlit/secrets.toml 에서 해당 키만 갱신(없으면 최상위에 추가)하고
+    나머지 행은 보존한다. 파일이 없으면 건너뛴다."""
+    if not os.path.exists(SECRETS_PATH):
+        return
+    with open(SECRETS_PATH, "r", encoding="utf-8") as fp:
+        lines = fp.read().splitlines()
+    for key, value in updates.items():
+        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        new_line = f'{key} = "{escaped}"'
+        pat = re.compile(rf"^\s*{re.escape(key)}\s*=")
+        for i, line in enumerate(lines):
+            if pat.match(line):
+                lines[i] = new_line
+                break
+        else:
+            # [section] 아래에 붙지 않도록 최상위(첫 섹션 헤더 앞)에 추가한다.
+            insert_at = next((i for i, ln in enumerate(lines)
+                              if ln.strip().startswith("[")), len(lines))
+            lines.insert(insert_at, new_line)
+    with open(SECRETS_PATH, "w", encoding="utf-8") as fp:
+        fp.write("\n".join(lines) + "\n")
+
+
+def update_passwords(updates):
+    """비밀번호를 .env 와 .streamlit/secrets.toml 모두에 저장한다(없는 파일은 skip)."""
+    _update_env(updates)
+    _update_secrets(updates)
+
+
+@st.dialog("비밀번호 확인")
+def ask_password(mode, action):
+    """동작 실행 전 비밀번호 확인. 일치하면 세션 플래그
+    pw_verified_{mode}_{action} 를 세우고 rerun 하여 본문에서 해당 동작을 실행한다.
+    - mode: current/revision(탭별 분석·초기화 공용) 또는 settings(setting 진입)
+    - action: run(분석) / reset(초기화) / open(setting 열기)"""
+    saved = get_password(mode)
+    if not saved:
+        st.error("비밀번호가 설정되어 있지 않습니다. 우측 상단 setting 에서 "
+                 "비밀번호를 지정하거나 .env / secrets.toml 에 "
+                 f"{PW_ENV_KEYS[mode]} 를 추가하세요.")
+        return
+    # form 으로 감싸 입력창에서 [엔터] 입력 시 확인 버튼이 눌리도록 한다.
+    with st.form(f"pw_form_{mode}_{action}", border=False):
+        pw = st.text_input(f"{PW_LABELS[mode]} 비밀번호", type="password",
+                           key=f"pw_input_{mode}_{action}")
+        submitted = st.form_submit_button("확인", type="primary", width="stretch")
+    if submitted:
+        if pw == saved:
+            st.session_state[f"pw_verified_{mode}_{action}"] = True
+            st.rerun()
+        else:
+            st.error("비밀번호가 올바르지 않습니다.")
+
+
+@st.dialog("설정", width="medium")
+def settings_dialog():
+    """우측 상단 setting: 부분 분석 표시 여부 + 탭별 분석 비밀번호 변경.
+    form 으로 감싸 입력창에서 [엔터] 입력 시 저장 버튼이 눌리도록 한다."""
+    settings = load_settings()
+    with st.form("settings_form", border=False):
+        show_partial = st.toggle(
+            "부분 분석(partial) 안내 표시",
+            value=settings.get("show_partial", True),
+            help="숨기면 분석 후 파란색 부분 분석 안내 영역이 두 탭 모두에서 표시되지 않습니다.")
+        st.divider()
+        st.markdown("**비밀번호 설정**")
+        st.caption("빈칸으로 두면 기존 비밀번호가 유지됩니다. "
+                   "(.env 와 .streamlit/secrets.toml 에 저장)")
+        pw_fields = []  # (mode, 라벨, 새 비밀번호, 비밀번호 확인)
+        for mode, label in [("current", "현행규정 정합성(분석·초기화)"),
+                            ("revision", "제·개정규정 정합성(분석·초기화)"),
+                            ("settings", "setting 진입")]:
+            c_pw, c_conf = st.columns(2)
+            pw = c_pw.text_input(f"{label} 비밀번호", type="password", key=f"set_pw_{mode}")
+            conf = c_conf.text_input("비밀번호 확인", type="password",
+                                     key=f"set_pw_{mode}_confirm")
+            pw_fields.append((mode, label, pw, conf))
+        submitted = st.form_submit_button("저장", type="primary", width="stretch")
+    if submitted:
+        # 새 비밀번호는 확인란과 일치해야만 저장한다(잘못된 입력 방지).
+        mismatch = [label for _m, label, pw, conf in pw_fields
+                    if (pw or conf) and pw != conf]
+        if mismatch:
+            st.error("비밀번호와 비밀번호 확인이 일치하지 않습니다: " + ", ".join(mismatch))
+        else:
+            settings["show_partial"] = show_partial
+            save_settings(settings)
+            updates = {PW_ENV_KEYS[m]: pw for m, _l, pw, _c in pw_fields if pw}
+            if updates:
+                update_passwords(updates)
+            st.rerun()
+
+
 # ---------------------------------------------------------------- 대시보드 컴포넌트
 # HTML 원본의 CSS/JS를 그대로 사용하고 데이터만 Python 에서 JSON 으로 주입한다.
 DASHBOARD_TEMPLATE = """
@@ -375,6 +541,12 @@ header[data-testid="stHeader"]{background:transparent}
 @keyframes ovspin{to{transform:rotate(360deg)}}
 /* 기본 st.spinner 도 혹시 쓰이면 중앙 오버레이로 */
 div[data-testid="stSpinner"],div.stSpinner{position:fixed !important;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(245,247,251,.72)}
+/* setting 버튼: 테두리 없이 글씨만 — 감싸는 컨테이너(우측 정렬)를 흐름에서
+   높이 0 으로 만들고 바로 아래 탭 행(구분선 위쪽)의 우측 끝에 겹쳐 배치 */
+.st-key-settings_bar{height:0 !important;min-height:0 !important;margin:0;padding:0;overflow:visible !important;position:relative;z-index:5}
+.st-key-btn_settings button{border:none !important;background:transparent !important;box-shadow:none !important;color:#6b7280;font-weight:700;font-size:13px;padding:4px 8px;min-height:0;transform:translateY(22px)}
+.st-key-btn_settings button:hover{color:#243b64}
+.st-key-btn_settings button:focus,.st-key-btn_settings button:active{outline:none;box-shadow:none !important}
 </style>
 """, unsafe_allow_html=True)
 
@@ -519,6 +691,13 @@ def confirm_reset(mode, cluster_id=None):
 
 
 # ---------------------------------------------------------------- 탭 2개
+# setting 버튼(테두리 없이 글씨만): 탭 구분선 우측 상단에 겹쳐 우측 정렬로 배치
+# (CSS .st-key-settings_bar 가 높이 0 처리 후 탭 행 위로 이동시킨다)
+with st.container(key="settings_bar", horizontal=True, horizontal_alignment="right"):
+    if st.button("setting", key="btn_settings"):
+        ask_password("settings", "open")  # 진입 비밀번호(최초 2465) 확인 후 설정창 열기
+if st.session_state.pop("pw_verified_settings_open", False):
+    settings_dialog()
 tab_current, tab_revision = st.tabs(["현행규정 정합성", "제·개정규정 정합성"])
 
 # ------------------------------------------------------------ 탭 1: 현행규정
@@ -540,6 +719,9 @@ with tab_current:
         c_run, c_reset = st.columns([1.6, 1])
         run_label = "다시 분석" if stored else "정합성 분석 실행"
         if c_run.button(run_label, type="primary", use_container_width=True, key="run_current"):
+            # 비밀번호 확인 다이얼로그 → 일치 시 rerun 후 아래 플래그 분기에서 분석 실행
+            ask_password("current", "run")
+        if st.session_state.pop("pw_verified_current_run", False):
             try:
                 parts = load_cluster_files(cluster_id)
                 request_info = [
@@ -566,7 +748,9 @@ with tab_current:
                 st.error(f"분석 실패: {e}")
         if c_reset.button("초기화", use_container_width=True, key="reset_current",
                           disabled=not stored):
-            # 확인 다이얼로그를 띄우고, ‘확인’ 시에만 선택 클러스터 데이터를 삭제한다.
+            # 분석 버튼과 동일한 비밀번호 확인 → 일치 시 초기화 확인 다이얼로그
+            ask_password("current", "reset")
+        if st.session_state.pop("pw_verified_current_reset", False):
             confirm_reset("current", cluster_id)
         date_ph.markdown(last_analyzed_html(stored.get("analyzed_at") if stored else None),
                          unsafe_allow_html=True)
@@ -605,6 +789,9 @@ with tab_revision:
             run_label_rev = "다시 분석" if stored_rev else "정합성 분석 실행"
             if st.button(run_label_rev, type="primary", disabled=not n,
                          use_container_width=True, key="run_revision"):
+                # 비밀번호 확인 다이얼로그 → 일치 시 rerun 후 아래 플래그 분기에서 분석 실행
+                ask_password("revision", "run")
+            if st.session_state.pop("pw_verified_revision_run", False) and n:
                 try:
                     # 모든 업로드 PDF 에서 텍스트 추출 후 M. 제개정규정통합.txt 생성
                     # (150KB 초과 시 M1, M2 … 로 분할)
@@ -639,7 +826,9 @@ with tab_revision:
                     st.error(f"분석 실패: {e}")
         if col_reset.button("초기화", use_container_width=True, key="reset_revision",
                             disabled=not stored_rev):
-            # 확인 다이얼로그를 띄우고, ‘확인’ 시에만 표시 결과를 해제한다.
+            # 분석 버튼과 동일한 비밀번호 확인 → 일치 시 초기화 확인 다이얼로그
+            ask_password("revision", "reset")
+        if st.session_state.pop("pw_verified_revision_reset", False):
             confirm_reset("revision")
         date_ph.markdown(
             last_analyzed_html(stored_rev.get("analyzed_at") if stored_rev else None),

@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학생 성적 상담 분석 리포트</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-page:       #F4F6F9;
+    --bg-card:       #FFFFFF;
+    --bg-inactive:   #EEEFF2;
+    --border:        #E0E3EA;
+    --border-strong: #C8CDD8;
+    --text-primary:  #1A1D27;
+    --text-secondary:#4B5168;
+    --text-muted:    #8B90A4;
+    --accent:        #003876;
+    --accent-light:  #E8EDF8;
+    --accent-mid:    #1A5CB8;
+    --success:       #0F6E56;
+    --success-light: #E1F5EE;
+    --danger:        #C0392B;
+    --danger-light:  #FDEDEC;
+    --warning:       #854F0B;
+    --warning-light: #FEF3E2;
+    --gold:          #FFB900;
+    --radius-sm:     4px;
+    --radius:        8px;
+    --radius-card:   12px;
+    --shadow-card:   0 1px 3px rgba(0,0,0,.06), 0 1px 8px rgba(0,0,0,.04);
+  }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .site-header {
+    background: var(--accent);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  }
+  .site-header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .site-logo { display: flex; align-items: center; gap: 12px; }
+  .site-logo-icon {
+    width: 36px; height: 36px;
+    background: var(--gold);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .site-logo-text strong { display: block; color: #fff; font-size: 15px; font-weight: 700; letter-spacing: -.3px; }
+  .site-logo-text span  { display: block; color: rgba(255,255,255,.65); font-size: 11px; }
+  .header-stats { display: flex; gap: 20px; }
+  .header-stat { text-align: center; }
+  .header-stat .num   { display: block; color: #fff; font-size: 18px; font-weight: 700; line-height: 1; }
+  .header-stat .label { display: block; color: rgba(255,255,255,.6); font-size: 11px; margin-top: 2px; }
+
+  /* ── Layout ── */
+  .page-wrap { max-width: 1200px; margin: 0 auto; padding: 24px 24px 48px; }
+
+  /* ── Student Info Bar ── */
+  .student-bar {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: var(--shadow-card);
+  }
+  .student-avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    border: 2px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .student-info-main { flex: 1; }
+  .student-info-main .dept { font-size: 13px; color: var(--text-muted); margin-bottom: 2px; }
+  .student-info-main .name-row { display: flex; align-items: center; gap: 10px; }
+  .student-info-main .sid { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .student-badge {
+    font-size: 11px; font-weight: 500; padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-light); color: var(--accent);
+  }
+  .student-stats { display: flex; gap: 24px; }
+  .s-stat { text-align: center; }
+  .s-stat .sval { display: block; font-size: 20px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .s-stat .slbl { display: block; font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+  /* ── Tabs ── */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 18px;
+    border-bottom: 2px solid var(--border);
+  }
+  .tab-btn {
+    padding: 10px 20px;
+    font-size: 13px; font-weight: 500;
+    font-family: inherit;
+    border: none; background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    display: flex; align-items: center; gap: 6px;
+    transition: all .15s;
+  }
+  .tab-btn:hover { color: var(--text-secondary); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Section Title ── */
+  .section-title {
+    font-size: 12px; font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* ── Card Grid ── */
+  .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; margin-bottom: 20px; }
+  .card-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; margin-bottom: 20px; }
+  .card-grid-1 { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 20px; }
+
+  /* ── Analysis Card ── */
+  .an-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+  .an-card-head {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .an-card-icon {
+    width: 32px; height: 32px;
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .icon-accent  { background: var(--accent-light); color: var(--accent); }
+  .icon-success { background: var(--success-light); color: var(--success); }
+  .icon-warning { background: var(--warning-light); color: var(--warning); }
+  .icon-danger  { background: var(--danger-light);  color: var(--danger); }
+  .icon-gold    { background: #FFF8E1; color: #7A5800; }
+
+  .an-card-head-text { flex: 1; }
+  .an-card-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+  .an-card-sub   { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .an-card-body  { padding: 14px 16px; }
+
+  /* ── Metric Row ── */
+  .metric-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
+  .metric-box {
+    background: var(--bg-page);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .metric-val { font-size: 22px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .metric-val.green { color: var(--success); }
+  .metric-val.red   { color: var(--danger); }
+  .metric-val.gold  { color: #7A5800; }
+  .metric-lbl { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* ── Semester Table ── */
+  .sem-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .sem-table th {
+    background: var(--bg-page); color: var(--text-muted);
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+    padding: 8px 10px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .sem-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: middle; }
+  .sem-table tr:last-child td { border-bottom: none; }
+  .sem-table tr:hover td { background: var(--bg-page); }
+
+  .trend-bar-wrap { width: 100%; background: var(--border); border-radius: 3px; height: 6px; }
+  .trend-bar { height: 6px; border-radius: 3px; background: var(--accent-mid); transition: width .3s; }
+  .trend-val { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+
+  .grade-badge {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    padding: 2px 8px; border-radius: var(--radius-sm);
+    min-width: 36px; text-align: center;
+  }
+  .g-aplus  { background:#FFF0CC; color:#7A5800; }
+  .g-a      { background:#E8EDF8; color:#003876; }
+  .g-bplus  { background:#E1F5EE; color:#0F6E56; }
+  .g-b      { background:#F0F4F0; color:#3A6040; }
+  .g-cplus  { background:#FDEDEC; color:#C0392B; }
+
+  /* ── Subject List ── */
+  .subj-list { display: flex; flex-direction: column; gap: 6px; }
+  .subj-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+  }
+  .subj-item.top    { background: var(--success-light); border-color: #9FE1CB; }
+  .subj-item.mid    { background: var(--accent-light); border-color: #BACBF0; }
+  .subj-item.low    { background: var(--danger-light); border-color: #F5C6C6; }
+  .subj-item-icon   { font-size: 14px; flex-shrink: 0; }
+  .subj-item.top  .subj-item-icon { color: var(--success); }
+  .subj-item.mid  .subj-item-icon { color: var(--accent); }
+  .subj-item.low  .subj-item-icon { color: var(--danger); }
+  .subj-name        { flex: 1; font-size: 13px; color: var(--text-primary); font-weight: 500; }
+  .subj-meta        { font-size: 11px; color: var(--text-muted); }
+  .subj-score       { font-size: 13px; font-weight: 700; }
+  .subj-item.top  .subj-score { color: var(--success); }
+  .subj-item.mid  .subj-score { color: var(--accent); }
+  .subj-item.low  .subj-score { color: var(--danger); }
+
+  /* ── Insight Box ── */
+  .insight-box {
+    font-size: 13px; color: var(--text-secondary); line-height: 1.8;
+    background: var(--bg-page);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    margin-top: 12px;
+  }
+  .insight-box.success { border-left-color: var(--success); }
+  .insight-box.warning { border-left-color: #E89F00; }
+  .insight-box.danger  { border-left-color: var(--danger); }
+
+  /* ── Career Card ── */
+  .career-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .career-card-head {
+    background: var(--accent);
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .career-rank {
+    width: 28px; height: 28px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #1A1D27;
+    flex-shrink: 0;
+  }
+  .career-head-text .career-field  { font-size: 15px; font-weight: 700; color: #fff; }
+  .career-head-text .career-sector { font-size: 12px; color: rgba(255,255,255,.65); margin-top: 1px; }
+  .career-body { padding: 16px 18px; }
+  .career-section { margin-bottom: 14px; }
+  .career-section:last-child { margin-bottom: 0; }
+  .career-sec-label {
+    font-size: 10px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .8px;
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .career-sec-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .basis-list { display: flex; flex-direction: column; gap: 6px; }
+  .basis-item {
+    display: flex; gap: 8px; align-items: flex-start;
+    font-size: 13px; color: var(--text-secondary); line-height: 1.6;
+  }
+  .basis-item i { color: var(--success); font-size: 14px; margin-top: 2px; flex-shrink: 0; }
+
+  .action-list { display: flex; flex-direction: column; gap: 6px; }
+  .action-item {
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    font-size: 13px; line-height: 1.6;
+  }
+  .action-item.red    { background: var(--danger-light); border: 1px solid #F5C6C6; color: var(--text-primary); }
+  .action-item.yellow { background: var(--warning-light); border: 1px solid #FCDBA8; color: var(--text-primary); }
+  .action-item.green  { background: var(--success-light); border: 1px solid #9FE1CB; color: var(--text-primary); }
+  .action-item i { font-size: 15px; margin-top: 1px; flex-shrink: 0; }
+  .action-item.red    i { color: var(--danger); }
+  .action-item.yellow i { color: var(--warning); }
+  .action-item.green  i { color: var(--success); }
+
+  /* ── Skill Tag Cloud ── */
+  .skill-cloud { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .skill-tag {
+    font-size: 12px; font-weight: 500; padding: 4px 12px;
+    border-radius: 20px; border: 1px solid;
+  }
+  .skill-tag.strong { background: var(--success-light); color: var(--success); border-color: #9FE1CB; }
+  .skill-tag.mid    { background: var(--accent-light);  color: var(--accent);  border-color: #BACBF0; }
+  .skill-tag.weak   { background: var(--warning-light); color: var(--warning); border-color: #FCDBA8; }
+
+  /* ── Chart Bar ── */
+  .chart-wrap { padding: 4px 0; }
+  .chart-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+  .chart-label { width: 80px; color: var(--text-secondary); flex-shrink: 0; text-align: right; }
+  .chart-bar-bg { flex: 1; background: var(--border); border-radius: 3px; height: 8px; }
+  .chart-bar-fill { height: 8px; border-radius: 3px; transition: width .4s; }
+  .chart-bar-val { width: 36px; font-weight: 700; color: var(--text-primary); flex-shrink: 0; }
+
+  /* ── Footer Note ── */
+  .foot-note {
+    margin-top: 32px;
+    padding: 14px 18px;
+    background: var(--bg-card);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    font-size: 12px; color: var(--text-muted); line-height: 1.8;
+  }
+
+  @media (max-width: 760px) {
+    .card-grid, .card-grid-3 { grid-template-columns: 1fr; }
+    .metric-grid { grid-template-columns: repeat(2,1fr); }
+    .header-stats { display: none; }
+    .page-wrap { padding: 16px 12px 40px; }
+    .student-stats { gap: 14px; }
+    .student-bar { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="site-logo">
+      <div class="site-logo-icon">🎓</div>
+      <div class="site-logo-text">
+        <strong>학생 성적 상담 분석 시스템</strong>
+        <span>소프트웨어융합과 · 성적 기반 AI 상담 리포트</span>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="header-stat">
+        <span class="num">110</span>
+        <span class="label">이수학점</span>
+      </div>
+      <div class="header-stat">
+        <span class="num">3.44</span>
+        <span class="label">전체 평점</span>
+      </div>
+      <div class="header-stat">
+        <span class="num">6</span>
+        <span class="label">이수학기</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="page-wrap">
+
+  <!-- Student Info Bar -->
+  <div class="student-bar">
+    <div class="student-avatar">👨‍💻</div>
+    <div class="student-info-main">
+      <div class="dept">소프트웨어융합과 (3년제)</div>
+      <div class="name-row">
+        <span class="sid">소프트웨어융합과 재학생</span>
+        <span class="student-badge">2020 입학</span>
+        <span class="student-badge">6학기 수료</span>
+      </div>
+    </div>
+    <div class="student-stats">
+      <div class="s-stat"><span class="sval">3.44</span><span class="slbl">가중평점</span></div>
+      <div class="s-stat"><span class="sval">86.9%</span><span class="slbl">평균 백분위</span></div>
+      <div class="s-stat"><span class="sval">110</span><span class="slbl">이수학점</span></div>
+      <div class="s-stat"><span class="sval">A+</span><span class="slbl">최고등급</span></div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('academic', this)">
+      <i class="ti ti-book" aria-hidden="true"></i> 학업 상담
+    </button>
+    <button class="tab-btn" onclick="switchTab('career', this)">
+      <i class="ti ti-briefcase" aria-hidden="true"></i> 취업 상담
+    </button>
+  </div>
+
+  <!-- ==================== 학업 상담 패널 ==================== -->
+  <div class="tab-panel active" id="panel-academic">
+
+    <!-- 요약 메트릭 -->
+    <div class="section-title"><i class="ti ti-chart-bar" aria-hidden="true" style="font-size:12px"></i> 핵심 성적 지표</div>
+    <div class="card-grid-3" style="margin-bottom:20px">
+      <div class="an-card">
+        <div class="an-card-head">
+          <div class="an-card-icon icon-accent"><i class="ti ti-chart-line" aria-hidden="true"></i></div>
+          <div class="an-card-head-text">
+            <div class="an-card-title">전체 가중평점</div>
+            <div class="an-card-sub">P/F 과목 제외 기준</div>
+          </div>
+        </div>
+        <div class="an-card-body">
+          <div style="text-align:center;padding:8px 0">
+            <div style="font-size:36px;font-weight:700;color:var(--accent);line-height:1">3.44</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px">/ 4.5 만점</div>
+          </div>
+          <div class="insight-box" style="margin-top:8px">
+            B+ 수준의 안정적인 성적을 유지하고 있으며, 전공 과목 평점(3.42)이 전반적으로 균일합니다.
+          </div>
+        </div>
+      </div>
+      <div class="an-card">
+        <div class="an-card-head">
+          <div class="an-card-icon icon-gold"><i class="ti ti-award" aria-hidden="true"></i></div>
+          <div class="an-card-head-text">
+            <div class="an-card-title">평균 백분위</div>
+            <div class="an-card-sub">등급 부여 과목 기준</div>
+          </div>
+        </div>
+        <div class="an-card-body">
+          <div style="text-align:center;padding:8px 0">
+            <div style="font-size:36px;font-weight:700;color:#7A5800;line-height:1">86.9%</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px">최고 96% (인공지능기본)</div>
+          </div>
+          <div class="insight-box warning" style="margin-top:8px">
+            수강 과목 중 상위 10~15% 수준에 해당합니다. 전반적으로 상위권 성적을 유지하고 있습니다.
+          </div>
+        </div>
+      </div>
+      <div class="an-card">
+        <div class="an-card-head">
+          <div class="an-card-icon icon-success"><i class="ti ti-trending-up" aria-hidden="true"></i></div>
+          <div class="an-card-head-text">
+            <div class="an-card-title">성적 추이</div>
+            <div class="an-card-sub">1학기 → 6학기</div>
+          </div>
+        </div>
+        <div class="an-card-body">
+          <div style="text-align:center;padding:8px 0">
+            <div style="font-size:36px;font-weight:700;color:var(--success);line-height:1">+0.95</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px">2.78 → 3.73 (상승폭)</div>
+          </div>
+          <div class="insight-box success" style="margin-top:8px">
+            입학 첫 학기 이후 꾸준히 성적이 향상되어 졸업학기에 최고 평점을 기록했습니다.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 학기별 성적 추이 -->
+    <div class="section-title"><i class="ti ti-calendar-stats" aria-hidden="true" style="font-size:12px"></i> 학기별 성적 추이 분석</div>
+    <div class="card-grid">
+      <div class="an-card">
+        <div class="an-card-head">
+          <div class="an-card-icon icon-accent"><i class="ti ti-chart-line" aria-hidden="true"></i></div>
+          <div class="an-card-head-text">
+            <div class="an-card-title">학기별 가중평점 변화</div>
+            <div class="an-card-sub">P/F 과목 제외</div>
+          </div>
+        </div>
+        <div class="an-card-body">
+          <div class="chart-wrap">
+            <div class="chart-row">
+              <div class="chart-label">2020-1</div>
+              <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:61.8%;background:#C0392B"></div></div>
+              <div class="chart-bar-val" style="color:var(--danger)">2.78</div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-label">2020-2</div>
+              <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:77.8%;background:#1A5CB8"></div></div>
+              <div class="chart-bar-val">3.50</div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-label">2021-1</div>
+              <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:79.6%;background:#1A5CB8"></div></div>
+              <div class="chart-bar-val">3.58</div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-label">2021-2</div>
+              <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:79.6%;background:#1A5CB8"></div></div>
+              <div class="chart-bar-val">3.58</div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-label">2022-1</div>
+              <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:77.1%;background:#1A5CB8"></div></div>
+              <div class="chart-bar-val">3.47</div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-label">2022-2</div>
+              <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:82.9%;background:#0F6E56"></div></div>
+              <div class="chart-bar-val" style="color:var(--success)">3.73</div>
+            </div>
+          </div>
+          <div class="insight-box" style="margin-top:12px">
+            <strong>📌 추이 요약:</strong> 2020년 1학기(2.78)는 프로그래밍 입문 과목에 어려움을 겪었으나, 2학기부터 3.50으로 크게 회복하였습니다. 이후 2021년부터 3.58 수준을 안정적으로 유지하였으며, 최종 학기인 2022년 2학기에 3.73으로 최고점을 달성하였습니다. 학업 적응력과 성장 가능성이 높습니다.
+          </div>
+        </div>
+      </div>
+
+      <div class="an-card">
+        <div class="an-card-head">
+          <div class="an-card-icon icon-success"><i class="ti ti-layout-list" aria-hidden="true"></i></div>
+          <div class="an-card-head-text">
+            <div class="an-card-title">이수구분별 성취도 진단</div>
+            <div class="an-card-sub">구분별 평균 평점 비교</div>
+          </div>
+        </div>
+        <div class="an-card-body">
+          <div class="chart-wrap">
+            <div class="chart-row">
+              <div class="chart-label">전공</div>
+              <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:76.0%;background:#1A5CB8"></div></div>
+              <div class="chart-bar-val">3.42</div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-label">교양필수</div>
+              <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:77.8%;background:#0F6E56"></div></div>
+              <div class="chart-bar-val">3.50</div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-label">핵심교양</div>
+              <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:83.3%;background:#0F6E56"></div></div>
+              <div class="chart-bar-val" style="color:var(--success)">3.75</div>
+            </div>
+          </div>
+          <div style="margin-top:12px; display:flex; flex-direction:column; gap:6px;">
+            <div class="subj-item top">
+              <i class="ti ti-star subj-item-icon" aria-hidden="true"></i>
+              <span class="subj-name">핵심교양 최우수</span>
+              <span class="subj-meta" style="margin-right:8px">디자인과생활, 뷰온패션 등</span>
+              <span class="subj-score">3.75</span>
+            </div>
+            <div class="subj-item mid">
+              <i class="ti ti-minus subj-item-icon" aria-hidden="true"></i>
+              <span class="subj-name">전공 안정권</span>
+              <span class="subj-meta" style="margin-right:8px">30개 과목 이수</span>
+              <span class="subj-score">3.42</span>
+            </div>
+          </div>
+          <div class="insight-box success" style="margin-top:12px">
+            <strong>📌 진단 요약:</strong> 핵심교양(3.75) &gt; 교양필수(3.50) &gt; 전공(3.42) 순으로 성취도가 높습니다. 전공 과목 수가 30개로 가장 많은 점을 감안하면 전공 학업 역량도 충분히 우수한 수준입니다.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 강약점 과목 분석 -->
+    <div class="section-title"><i class="ti ti-target" aria-hidden="true" style="font-size:12px"></i> 강약점 과목 분석 및 학습 방향</div>
+    <div class="card-grid">
+      <div class="an-card">
+        <div class="an-card-head">
+          <div class="an-card-icon icon-success"><i class="ti ti-thumb-up" aria-hidden="true"></i></div>
+          <div class="an-card-head-text">
+            <div class="an-card-title">강점 과목 (평점 4.0 이상)</div>
+            <div class="an-card-sub">7개 과목 · 최고 백분위 96%</div>
+          </div>
+        </div>
+        <div class="an-card-body">
+          <div class="subj-list">
+            <div class="subj-item top">
+              <i class="ti ti-star subj-item-icon" aria-hidden="true"></i>
+              <div style="flex:1"><div class="subj-name">인공지능기본</div><div class="subj-meta">2021-1 · 전공</div></div>
+              <span class="grade-badge g-aplus">A+</span>
+              <span class="subj-score" style="margin-left:8px">96%</span>
+            </div>
+            <div class="subj-item top">
+              <i class="ti ti-check subj-item-icon" aria-hidden="true"></i>
+              <div style="flex:1"><div class="subj-name">엑셀실무</div><div class="subj-meta">2020-2 · 전공</div></div>
+              <span class="grade-badge g-a">A0</span>
+              <span class="subj-score" style="margin-left:8px">94%</span>
+            </div>
+            <div class="subj-item top">
+              <i class="ti ti-check subj-item-icon" aria-hidden="true"></i>
+              <div style="flex:1"><div class="subj-name">빅데이터분석 기본</div><div class="subj-meta">2021-2 · 전공</div></div>
+              <span class="grade-badge g-a">A0</span>
+              <span class="subj-score" style="margin-left:8px">94%</span>
+            </div>
+            <div class="subj-item top">
+              <i class="ti ti-check subj-item-icon" aria-hidden="true"></i>
+              <div style="flex:1"><div class="subj-name">융합형 캡스톤디자인 (IoT)</div><div class="subj-meta">2022-2 · 전공</div></div>
+              <span class="grade-badge g-a">A0</span>
+              <span class="subj-score" style="margin-left:8px">94%</span>
+            </div>
+            <div class="subj-item top">
+              <i class="ti ti-check subj-item-icon" aria-hidden="true"></i>
+              <div style="flex:1"><div class="subj-name">컴퓨터개론</div><div class="subj-meta">2020-2 · 전공</div></div>
+              <span class="grade-badge g-a">A0</span>
+              <span class="subj-score" style="margin-left:8px">90%</span>
+            </div>
+          </div>
+          <div class="insight-box success" style="margin-top:10px">
+            인공지능·빅데이터·데이터 분석 계열에서 탁월한 역량을 보여주고 있으며, IoT 기반 프로젝트(캡스톤) 수행 능력도 우수합니다.
+          </div>
+        </div>
+      </div>
+
+      <div class="an-card">
+        <div class="an-card-head">
+          <div class="an-card-icon icon-danger"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
+          <div class="an-card-head-text">
+            <div class="an-card-title">취약 과목 및 보완 방향</div>
+            <div class="an-card-sub">저평점 과목 · 학습 전략 제언</div>
+          </div>
+        </div>
+        <div class="an-card-body">
+          <div class="subj-list">
+            <div class="subj-item low">
+              <i class="ti ti-alert-circle subj-item-icon" aria-hidden="true"></i>
+              <div style="flex:1"><div class="subj-name">파이선프로그래밍기본</div><div class="subj-meta">2020-1 · 전공</div></div>
+              <span class="grade-badge g-cplus">C+</span>
+              <span class="subj-score" style="margin-left:8px">79%</span>
+            </div>
+            <div class="subj-item low">
+              <i class="ti ti-alert-circle subj-item-icon" aria-hidden="true"></i>
+              <div style="flex:1"><div class="subj-name">C프로그래밍기본</div><div class="subj-meta">2020-1 · 전공</div></div>
+              <span class="grade-badge g-cplus">C+</span>
+              <span class="subj-score" style="margin-left:8px">79%</span>
+            </div>
+            <div class="subj-item low">
+              <i class="ti ti-alert-circle subj-item-icon" aria-hidden="true"></i>
+              <div style="flex:1"><div class="subj-name">엑셀기본</div><div class="subj-meta">2020-1 · 전공</div></div>
+              <span class="grade-badge g-cplus">C+</span>
+              <span class="subj-score" style="margin-left:8px">79%</span>
+            </div>
+          </div>
+          <div class="insight-box danger" style="margin-top:10px">
+            <strong>📌 패턴 분석:</strong> 취약 과목이 모두 2020년 1학기에 집중되어 있습니다. 이는 입학 초기 학습 방법 미숙으로 인한 일시적 어려움으로 해석됩니다. 이후 동일 계열의 '파이선프로그래밍실무(B0)', 'C프로그래밍실무(B0)'에서 성적이 향상된 점이 이를 뒷받침합니다.
+          </div>
+          <div class="insight-box" style="margin-top:8px">
+            <strong>💡 학습 방향 제언:</strong><br>
+            · 프로그래밍 기초(Python·C)는 취업 준비 시 코딩테스트 대비로 재정비를 권장합니다.<br>
+            · 백준, 프로그래머스 등 온라인 저지(OJ) 플랫폼을 활용한 알고리즘 학습을 추가할 것을 권장합니다.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panel-academic -->
+
+  <!-- ==================== 취업 상담 패널 ==================== -->
+  <div class="tab-panel" id="panel-career">
+
+    <!-- 역량 스킬 태그 -->
+    <div class="section-title"><i class="ti ti-code" aria-hidden="true" style="font-size:12px"></i> 성적 기반 역량 맵</div>
+    <div class="an-card" style="margin-bottom:20px">
+      <div class="an-card-head">
+        <div class="an-card-icon icon-accent"><i class="ti ti-sparkles" aria-hidden="true"></i></div>
+        <div class="an-card-head-text">
+          <div class="an-card-title">소프트웨어융합과 전공 역량 분석 — 취업 연계 스킬맵</div>
+          <div class="an-card-sub">성적 데이터 기반 강점(녹색) · 보통(파랑) · 보완필요(주황)</div>
+        </div>
+      </div>
+      <div class="an-card-body">
+        <div style="margin-bottom:8px;font-size:12px;color:var(--text-muted)">강점 역량</div>
+        <div class="skill-cloud">
+          <span class="skill-tag strong">인공지능 / AI (A+ · 96%)</span>
+          <span class="skill-tag strong">빅데이터 분석 (A0 · 94%)</span>
+          <span class="skill-tag strong">IoT 비즈니스 (A0 · 94%)</span>
+          <span class="skill-tag strong">데이터 시각화·엑셀 (A0 · 94%)</span>
+          <span class="skill-tag strong">UI/UX 디자인·구현 (B+ · 88%)</span>
+        </div>
+        <div style="margin-top:12px;margin-bottom:8px;font-size:12px;color:var(--text-muted)">보통 역량</div>
+        <div class="skill-cloud">
+          <span class="skill-tag mid">Java 프로그래밍</span>
+          <span class="skill-tag mid">JavaScript / 웹 프론트엔드</span>
+          <span class="skill-tag mid">데이터베이스 (기본·실무)</span>
+          <span class="skill-tag mid">자료구조</span>
+          <span class="skill-tag mid">모바일 앱 개발</span>
+          <span class="skill-tag mid">클라우드컴퓨팅 (B+ · 89%)</span>
+          <span class="skill-tag mid">시스템분석설계</span>
+        </div>
+        <div style="margin-top:12px;margin-bottom:8px;font-size:12px;color:var(--text-muted)">보완 필요</div>
+        <div class="skill-cloud">
+          <span class="skill-tag weak">Python 기초 코딩 (C+)</span>
+          <span class="skill-tag weak">C 언어 기초 (C+)</span>
+          <span class="skill-tag weak">알고리즘 (미이수)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 취업 추천 분야 -->
+    <div class="section-title"><i class="ti ti-briefcase" aria-hidden="true" style="font-size:12px"></i> 취업 추천 분야</div>
+
+    <!-- 1순위 -->
+    <div class="career-card">
+      <div class="career-card-head">
+        <div class="career-rank">1</div>
+        <div class="career-head-text">
+          <div class="career-field">AI / 데이터 분석가</div>
+          <div class="career-sector">IT 서비스 · 제조업 DX · 금융 핀테크 · 공공데이터</div>
+        </div>
+      </div>
+      <div class="career-body">
+        <div class="career-section">
+          <div class="career-sec-label"><i class="ti ti-file-description" aria-hidden="true" style="font-size:11px"></i> 추천 근거</div>
+          <div class="basis-list">
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span><strong>인공지능기본 A+(96%)</strong> — 전체 과목 중 최고 성적으로, AI에 대한 높은 이해도와 적성을 보여줍니다.</span></div>
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span><strong>빅데이터분석 기본 A0(94%)</strong> — 데이터 처리·분석 능력이 검증되었습니다.</span></div>
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span><strong>인공지능실무 B+(87%)</strong> — 이론에서 실무까지 연계된 AI 학습 이력이 있습니다.</span></div>
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span><strong>데이터베이스 기본·실무 B+(86%)</strong> — SQL 기반 데이터 관리 역량이 뒷받침됩니다.</span></div>
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span><strong>엑셀실무 A0(94%)</strong> — 비즈니스 데이터 처리 및 시각화 역량을 보유하고 있습니다.</span></div>
+          </div>
+        </div>
+        <div class="career-section">
+          <div class="career-sec-label"><i class="ti ti-pencil" aria-hidden="true" style="font-size:11px"></i> 자소서·포트폴리오 활용 포인트</div>
+          <div class="insight-box success">
+            "인공지능기본 A+ (상위 4%) 취득, 빅데이터 분석 프로젝트 수행 경험"을 핵심 역량으로 기술하세요. 캡스톤디자인에서 IoT+AI를 융합한 프로젝트 경험도 차별화 포인트입니다.
+          </div>
+        </div>
+        <div class="career-section">
+          <div class="career-sec-label"><i class="ti ti-tool" aria-hidden="true" style="font-size:11px"></i> 보완할 점 및 준비 액션플랜</div>
+          <div class="action-list">
+            <div class="action-item red">
+              <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+              <span><strong>Python 코딩 역량 강화 (최우선)</strong> — 입학 초 C+ 이력을 커버하기 위해 파이썬 알고리즘 문제 풀이 100문제 이상을 목표로 설정하세요. 프로그래머스 Lv.1~2 통과를 단기 목표로 삼으세요.</span>
+            </div>
+            <div class="action-item yellow">
+              <i class="ti ti-point" aria-hidden="true"></i>
+              <span><strong>자격증 취득 권장</strong> — ADsP(데이터분석 준전문가) 또는 SQLD(SQL 개발자) 자격증이 데이터 분석가 직무 지원 시 서류 통과에 유리합니다.</span>
+            </div>
+            <div class="action-item yellow">
+              <i class="ti ti-point" aria-hidden="true"></i>
+              <span><strong>캐글(Kaggle) 또는 DACON 대회 참여</strong> — 실전 데이터 분석 포트폴리오를 구성하여 GitHub에 업로드하면 취업 경쟁력이 크게 향상됩니다.</span>
+            </div>
+            <div class="action-item green">
+              <i class="ti ti-check" aria-hidden="true"></i>
+              <span><strong>AI·빅데이터 관련 인턴십 경험</strong> — 공공기관 데이터 청년인재, NCS 기반 공모전 등에 참여하여 현장 경험을 쌓는 것을 권장합니다.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2순위 -->
+    <div class="career-card">
+      <div class="career-card-head">
+        <div class="career-rank">2</div>
+        <div class="career-head-text">
+          <div class="career-field">UI/UX 개발자 / 프론트엔드 개발자</div>
+          <div class="career-sector">IT 스타트업 · 디지털 에이전시 · 전자상거래 · 앱 서비스</div>
+        </div>
+      </div>
+      <div class="career-body">
+        <div class="career-section">
+          <div class="career-sec-label"><i class="ti ti-file-description" aria-hidden="true" style="font-size:11px"></i> 추천 근거</div>
+          <div class="basis-list">
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span><strong>UI/UX 디자인 B+(88%)</strong> + <strong>UI/UX 구현 B+(88%)</strong> — 디자인과 구현 모두 이수하여 Full-cycle UX 역량을 보유하고 있습니다.</span></div>
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span><strong>자바스크립트 기본(B+, 89%) → 실무(B+, 86%)</strong> — 핵심 프론트엔드 언어의 기본·실무 모두 B+ 이상입니다.</span></div>
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span><strong>웹표준(B0) + 웹프로그래밍 기본·실무</strong> — 웹 개발 전 주기 과목을 이수했습니다.</span></div>
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span><strong>모바일프로그래밍 기본·실무 B+</strong> — 앱 개발 역량도 겸비하고 있어 크로스플랫폼 개발 직무에 적합합니다.</span></div>
+          </div>
+        </div>
+        <div class="career-section">
+          <div class="career-sec-label"><i class="ti ti-pencil" aria-hidden="true" style="font-size:11px"></i> 자소서·포트폴리오 활용 포인트</div>
+          <div class="insight-box success">
+            UI/UX 디자인부터 JavaScript 구현까지 전 과정을 이수한 점을 강조하세요. 캡스톤디자인에서 UI가 포함된 결과물이 있다면 시연 영상과 함께 포트폴리오에 반드시 포함시키세요.
+          </div>
+        </div>
+        <div class="career-section">
+          <div class="career-sec-label"><i class="ti ti-tool" aria-hidden="true" style="font-size:11px"></i> 보완할 점 및 준비 액션플랜</div>
+          <div class="action-list">
+            <div class="action-item red">
+              <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+              <span><strong>React / Vue.js 등 프레임워크 독학 필수</strong> — 현업에서는 순수 JavaScript보다 프레임워크 사용이 기본입니다. 인프런, 유데미 등을 활용해 최소 1개 프레임워크를 습득하세요.</span>
+            </div>
+            <div class="action-item yellow">
+              <i class="ti ti-point" aria-hidden="true"></i>
+              <span><strong>피그마(Figma) 포트폴리오 제작</strong> — UI/UX 과목 성적을 근거로 Figma 툴 능숙도를 증명할 수 있는 디자인 결과물을 준비하세요.</span>
+            </div>
+            <div class="action-item green">
+              <i class="ti ti-check" aria-hidden="true"></i>
+              <span><strong>GitHub 포트폴리오 관리</strong> — 웹·모바일 프로젝트 소스코드를 GitHub에 체계적으로 정리하여 개발 이력을 가시화하세요.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3순위 -->
+    <div class="career-card">
+      <div class="career-card-head">
+        <div class="career-rank">3</div>
+        <div class="career-head-text">
+          <div class="career-field">클라우드 / IoT 솔루션 엔지니어</div>
+          <div class="career-sector">IT 인프라 · 스마트팩토리 · 스마트시티 · SI 기업</div>
+        </div>
+      </div>
+      <div class="career-body">
+        <div class="career-section">
+          <div class="career-sec-label"><i class="ti ti-file-description" aria-hidden="true" style="font-size:11px"></i> 추천 근거</div>
+          <div class="basis-list">
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span><strong>클라우드컴퓨팅 B+(89%)</strong> — 클라우드 기반 서비스 이해도가 높습니다.</span></div>
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span><strong>융합형 캡스톤디자인 (IoT 비즈니스 모델) A0(94%)</strong> — IoT 기반 비즈니스 모델 설계·구현 경험이 있습니다.</span></div>
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span><strong>시스템분석설계 B+(86%)</strong> — IT 시스템 설계 역량이 뒷받침됩니다.</span></div>
+            <div class="basis-item"><i class="ti ti-circle-check" aria-hidden="true"></i><span>소프트웨어융합과 특성상 <strong>하드웨어+소프트웨어 융합</strong> 역량을 갖추고 있어 스마트팩토리, 스마트홈 분야 취업에 유리합니다.</span></div>
+          </div>
+        </div>
+        <div class="career-section">
+          <div class="career-sec-label"><i class="ti ti-tool" aria-hidden="true" style="font-size:11px"></i> 보완할 점 및 준비 액션플랜</div>
+          <div class="action-list">
+            <div class="action-item yellow">
+              <i class="ti ti-point" aria-hidden="true"></i>
+              <span><strong>AWS Cloud Practitioner 자격증 취득</strong> — 클라우드 분야 입문 자격증으로 현업 취업에 직접적 도움이 됩니다. 무료 강의(AWS Skill Builder)를 적극 활용하세요.</span>
+            </div>
+            <div class="action-item green">
+              <i class="ti ti-check" aria-hidden="true"></i>
+              <span><strong>IoT 프로젝트 심화</strong> — 캡스톤디자인 결과물을 GitHub·포트폴리오 사이트에 정리하여 지원 시 제출하면 경쟁력이 높아집니다.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot-note">
+      <strong>📋 상담 메모</strong><br>
+      본 리포트는 소프트웨어융합과(3년제) 학생의 성적 데이터를 기반으로 자동 생성되었습니다. 실제 취업 준비 방향은 학생의 관심 분야, 취업 희망 기업 규모, 추가 자격증 및 프로젝트 이력 등을 종합적으로 고려하여 담당 상담교수와 심층 상담을 병행하시기 바랍니다. P/F 과목(사랑의실천 리더십, 교양영어, 진로코칭, 취업코칭 등)은 평점 산출에서 제외하였습니다.
+    </div>
+
+  </div><!-- /panel-career -->
+
+</main>
+
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+</script>
+</body>
+</html>
