@@ -542,7 +542,7 @@ def export_rule_list(conn):
 
 CLUSTER_FILE = WORK_DIR / "주제별 클러스터.txt"
 CLUSTER_DIR = WORK_DIR / "regulationsByCluster"
-CLUSTER_SPLIT_LIMIT = 150 * 1024  # 클러스터 txt 분할 기준(150KB, utf-8 바이트)
+CLUSTER_SPLIT_LIMIT = 10 * 1024  # 클러스터 txt 분할 기준(10KB, utf-8 바이트)
 
 
 def _norm_name(s):
@@ -619,9 +619,9 @@ def parse_cluster_file():
 
 def _write_cluster_split(safe_name, texts):
     """
-    클러스터 통합 텍스트를 파일로 저장한다. utf-8 기준 150KB 를 넘으면
+    클러스터 통합 텍스트를 파일로 저장한다. utf-8 기준 10KB 를 넘으면
     규정 경계에서 나누어 클러스터 ID 뒤에 넘버링한 파일로 분할 저장한다.
-    예) A. 조직….txt 가 180KB -> A1. 조직….txt(150KB 이하) + A2. 조직….txt
+    예) A. 조직….txt 가 180KB -> A1. 조직….txt(10KB 이하) + A2. 조직….txt
     저장한 파일명 목록을 반환한다.
     """
     sep = "\n\n\n"
@@ -659,7 +659,7 @@ def export_regulations_by_cluster(conn):
     """
     주제별 클러스터.txt 를 참조하여 DB의 규정을 클러스터별로 분류하고,
     regulationsByCluster/<클러스터명>.txt 로 저장한다.
-    파일이 150KB 를 넘으면 넘버링(A1, A2, …)하여 분할 저장한다.
+    파일이 10KB 를 넘으면 넘버링(A1, A2, …)하여 분할 저장한다.
     (규정명 표기 차이를 흡수하기 위해 정규화 후 부분일치로 매칭)
     """
     if not CLUSTER_FILE.exists():
