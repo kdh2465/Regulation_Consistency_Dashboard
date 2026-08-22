@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>공문 분석 카드 시스템</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-page:       #F4F6F9;
+    --bg-card:       #FFFFFF;
+    --bg-inactive:   #EEEFF2;
+    --border:        #E0E3EA;
+    --border-strong: #C8CDD8;
+    --text-primary:  #1A1D27;
+    --text-secondary:#4B5168;
+    --text-muted:    #8B90A4;
+    --accent:        #003876;
+    --accent-light:  #E8EDF8;
+    --accent-mid:    #1A5CB8;
+    --success:       #0F6E56;
+    --success-light: #E1F5EE;
+    --danger:        #C0392B;
+    --danger-light:  #FDEDEC;
+    --warning:       #854F0B;
+    --warning-light: #FEF3E2;
+    --gold:          #FFB900;
+    --radius-sm:     4px;
+    --radius:        8px;
+    --radius-card:   12px;
+    --shadow-card:   0 1px 3px rgba(0,0,0,.06), 0 1px 8px rgba(0,0,0,.04);
+  }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .site-header {
+    background: var(--accent);
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  }
+  .site-header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .site-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .site-logo-icon {
+    width: 36px; height: 36px;
+    background: var(--gold);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .site-logo-text strong {
+    display: block;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -.3px;
+  }
+  .site-logo-text span {
+    display: block;
+    color: rgba(255,255,255,.65);
+    font-size: 11px;
+  }
+  .header-stats {
+    display: flex;
+    gap: 20px;
+  }
+  .header-stat {
+    text-align: center;
+  }
+  .header-stat .num {
+    display: block;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .header-stat .label {
+    display: block;
+    color: rgba(255,255,255,.6);
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  /* ── Layout ── */
+  .page-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 24px 48px;
+  }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .toolbar-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .toolbar-title strong {
+    color: var(--text-primary);
+  }
+  .toolbar-right {
+    display: flex;
+    gap: 8px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: background .12s, border-color .12s;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--bg-page); border-color: var(--accent); color: var(--accent); }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: #002A5C; border-color: #002A5C; color: #fff; }
+
+  /* ── Filter area ── */
+  .filter-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .filter-group-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    white-space: nowrap;
+    margin-right: 2px;
+  }
+  .filter-sep {
+    width: 1px;
+    height: 22px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .filter-tab {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--bg-page);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .12s;
+    white-space: nowrap;
+  }
+  .filter-tab:hover { border-color: var(--border-strong); color: var(--text-secondary); }
+  .filter-tab.active-tab-type {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .filter-tab.active-tab-urgent {
+    background: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+  }
+  .filter-reset {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    transition: color .12s;
+  }
+  .filter-reset:hover { color: var(--accent); }
+  .filter-active-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 3px 8px;
+    background: var(--bg-page);
+    border-radius: 20px;
+    border: 1px dashed var(--border-strong);
+    display: none;
+  }
+  .filter-active-label.visible { display: inline-block; }
+
+  /* ── Card list ── */
+  #card-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+  #card-list .empty-state { grid-column: 1 / -1; }
+
+  /* ── Card ── */
+  .gm-card {
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: border-color .15s, box-shadow .15s;
+    box-shadow: var(--shadow-card);
+    /* 높이 균일화: 세로 flex — 접힘=최대 높이, 펼침=평균 높이(JS가 지정) */
+    display: flex;
+    flex-direction: column;
+  }
+  .gm-card.active {
+    background: var(--bg-card);
+    border-color: var(--border);
+  }
+  .gm-card.active:hover {
+    border-color: var(--border-strong);
+    box-shadow: 0 2px 12px rgba(0,56,118,.08);
+  }
+  .gm-card.inactive {
+    background: var(--bg-inactive);
+    border-color: var(--border);
+    opacity: .75;
+  }
+
+  /* Card head */
+  .gm-card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .gm-card.inactive .gm-card-head { cursor: default; }
+
+  .gm-badge-col {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+  .gm-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+  }
+  .badge-internal  { background: var(--accent-light); color: var(--accent); }
+  .badge-external  { background: var(--success-light); color: var(--success); }
+  .badge-inactive  { background: #E4E6EC; color: var(--text-muted); border: 1px solid var(--border); }
+  .badge-urgent    { background: var(--danger-light); color: var(--danger); }
+  .badge-attach    { background: #F0F0F0; color: var(--text-muted); }
+  .badge-reply     { background: #FFF8E1; color: #7A5800; }
+
+  .gm-head-main { flex: 1; min-width: 0; }
+  .gm-doc-num {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-weight: 500;
+    letter-spacing: .3px;
+  }
+  .gm-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .gm-card.inactive .gm-title { color: var(--text-secondary); }
+  .gm-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .gm-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .gm-meta i { font-size: 13px; color: var(--text-muted); }
+  .gm-meta.danger { color: var(--danger); font-weight: 500; }
+  .gm-meta.danger i { color: var(--danger); }
+
+  .gm-toggle-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    align-self: flex-start;
+    margin-top: 2px;
+    transition: all .12s;
+    white-space: nowrap;
+  }
+  .gm-toggle-btn:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .gm-toggle-btn .chevron { font-size: 14px; transition: transform .2s; }
+  .gm-toggle-btn.open .chevron { transform: rotate(180deg); }
+
+  /* Divider */
+  .gm-divider { height: 1px; background: var(--border); margin: 0; }
+
+  /* Card body (expanded) */
+  .gm-body { display: none; padding: 16px 18px; }
+  .gm-body.open {
+    display: block;
+    /* 펼침 시 카드가 고정 높이를 넘으면 본문 영역만 내부 스크롤 */
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .gm-section { margin-bottom: 18px; }
+  .gm-section:last-child { margin-bottom: 0; }
+  .gm-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .gm-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Info grid */
+  .gm-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 20px;
+    background: var(--bg-page);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+  }
+  .gm-info-item { display: flex; flex-direction: column; gap: 2px; }
+  .gm-info-k { font-size: 11px; color: var(--text-muted); }
+  .gm-info-v { font-size: 13px; color: var(--text-primary); font-weight: 500; }
+  .gm-info-v.deadline { color: var(--danger); }
+
+  /* Summary */
+  .gm-summary {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    background: var(--bg-page);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+  }
+
+  /* Todo */
+  .gm-todo-list { display: flex; flex-direction: column; gap: 6px; }
+  .gm-todo {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+  }
+  .gm-todo.red    { background: var(--danger-light);  border-color: #F5C6C6; }
+  .gm-todo.yellow { background: var(--warning-light); border-color: #FCDBA8; }
+  .gm-todo.green  { background: var(--success-light); border-color: #9FE1CB; }
+  .gm-todo-icon { font-size: 15px; margin-top: 1px; flex-shrink: 0; }
+  .gm-todo.red    .gm-todo-icon { color: var(--danger); }
+  .gm-todo.yellow .gm-todo-icon { color: var(--warning); }
+  .gm-todo.green  .gm-todo-icon { color: var(--success); }
+  .gm-todo-text { flex: 1; font-size: 13px; color: var(--text-primary); line-height: 1.5; }
+  .gm-todo-date { font-size: 11px; color: var(--text-muted); white-space: nowrap; padding-top: 2px; }
+
+  /* Attachments */
+  .gm-attach-list { display: flex; flex-direction: column; gap: 6px; }
+  .gm-attach {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg-page);
+  }
+  .gm-attach i { font-size: 18px; color: var(--text-muted); flex-shrink: 0; }
+  .gm-attach-name { font-size: 13px; color: var(--text-primary); font-weight: 500; }
+  .gm-attach-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Reply */
+  .gm-reply-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    background: #F0FBF7;
+    border: 1px solid #9FE1CB;
+  }
+  .gm-reply-box i { font-size: 16px; color: var(--success); }
+  .gm-reply-label { font-size: 13px; color: var(--success); font-weight: 500; }
+  .gm-reply-detail { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Memo */
+  .gm-memo {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    background: var(--bg-page);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    border: 1px dashed var(--border-strong);
+  }
+
+  /* Card footer */
+  .gm-card-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 18px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,.015);
+    margin-top: auto;   /* 고정 높이 카드에서 항상 하단 고정 */
+    flex-shrink: 0;
+  }
+  .gm-foot-left {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .gm-status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .gm-status-dot.active   { background: var(--success); }
+  .gm-status-dot.inactive { background: var(--text-muted); }
+  .gm-status-text { font-size: 12px; color: var(--text-muted); }
+  .gm-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .gm-action-btn:hover { border-color: var(--border-strong); color: var(--text-secondary); background: var(--bg-card); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+  }
+  .empty-state i { font-size: 36px; margin-bottom: 12px; display: block; }
+  .empty-state p { font-size: 14px; }
+
+  /* Responsive */
+  @media (max-width: 760px) {
+    #card-list { grid-template-columns: 1fr; }
+    .page-wrap { padding: 16px 12px 40px; }
+    .gm-info-grid { grid-template-columns: 1fr; }
+    .header-stats { display: none; }
+    .site-header-inner { padding: 12px 16px; }
+    .gm-card-head { gap: 10px; }
+    .gm-badge-col { display: none; }
+    .toolbar-title { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="site-logo">
+      <div class="site-logo-icon">🇰🇷</div>
+      <div class="site-logo-text">
+        <strong>공문 분석 시스템</strong>
+        <span>AI 기반 공문 자동 분석 · 요약 · 관리</span>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="header-stat">
+        <span class="num" id="stat-total">0</span>
+        <span class="label">전체</span>
+      </div>
+      <div class="header-stat">
+        <span class="num" id="stat-active">0</span>
+        <span class="label">활성</span>
+      </div>
+      <div class="header-stat">
+        <span class="num" id="stat-urgent">0</span>
+        <span class="label">긴급</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="page-wrap">
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <span class="toolbar-title">공문 목록 <strong id="count-label">0</strong>건</span>
+    </div>
+    <div class="toolbar-right">
+      <button class="btn" onclick="location.reload()" title="파일을 다시 읽어 최신 카드를 표시">
+        <i class="ti ti-refresh" aria-hidden="true"></i> 새로읽기
+      </button>
+      <button class="btn btn-primary" onclick="addSampleCard()">
+        <i class="ti ti-plus" aria-hidden="true"></i> 공문 추가
+      </button>
+      <button class="btn" onclick="expandAll()">
+        <i class="ti ti-arrows-maximize" aria-hidden="true"></i> 전체 펼치기
+      </button>
+      <button class="btn" onclick="collapseAll()">
+        <i class="ti ti-arrows-minimize" aria-hidden="true"></i> 전체 접기
+      </button>
+    </div>
+  </div>
+
+  <div class="filter-area">
+    <!-- 그룹 1: 상태 (그룹 내 배타 선택) -->
+    <span class="filter-group-label">상태</span>
+    <div class="filter-group">
+      <button class="filter-tab" id="ftab-active"   onclick="setStatusFilter('active')">활성</button>
+      <button class="filter-tab" id="ftab-inactive" onclick="setStatusFilter('inactive')">비활성</button>
+    </div>
+
+    <div class="filter-sep"></div>
+
+    <!-- 그룹 2: 공문 유형 (그룹 내 배타 선택) -->
+    <span class="filter-group-label">유형</span>
+    <div class="filter-group">
+      <button class="filter-tab" id="ftab-external" onclick="setOriginFilter('external')">외부공문</button>
+      <button class="filter-tab" id="ftab-internal" onclick="setOriginFilter('internal')">내부공문</button>
+    </div>
+
+    <div class="filter-sep"></div>
+
+    <!-- 그룹 3: 긴급도 (그룹 내 배타 선택) -->
+    <span class="filter-group-label">긴급도</span>
+    <div class="filter-group">
+      <button class="filter-tab" id="ftab-urgent" onclick="setPriorityFilter('urgent')">
+        <i class="ti ti-alert-triangle" aria-hidden="true" style="font-size:11px;margin-right:2px"></i>긴급
+      </button>
+      <button class="filter-tab" id="ftab-normal" onclick="setPriorityFilter('normal')">일반</button>
+    </div>
+
+    <span class="filter-active-label" id="filter-active-label"></span>
+    <button class="filter-reset" id="filter-reset-btn" onclick="resetAllFilters()" style="display:none">
+      <i class="ti ti-x" aria-hidden="true" style="font-size:11px"></i> 초기화
+    </button>
+  </div>
+
+  <div id="card-list" role="list" aria-label="공문 분석 카드 목록"></div>
+
+</main>
+
+<script>
+const cards = [
+  {
+    "id": 1,
+    "active": false,
+    "docNum": "녹색건축실-8784",
+    "type": "external",
+    "typeLabel": "외부",
+    "title": "「제6회 그린리모델링 챌린지」 개최 안내 및 홍보 협조 요청",
+    "sender": "국토안전관리원장",
+    "receiver": "수신자참조",
+    "issued": "2026-08-18",
+    "received": "2026-08-19",
+    "deadline": "없음",
+    "security": "평문 (공개)",
+    "summary": "국토교통부가 주최하고 국토안전관리원이 주관하는 「제6회 그린리모델링 챌린지」 개최를 안내하는 공문입니다. 그린리모델링에 대한 국민 인식 확산과 참여 활성화를 위해 대학(원)생 등이 참여할 수 있는 다양한 공모·경연 부문을 운영합니다. 수신 대학에는 관련 학과 및 대학원에 전자공문을 시행하고, 홈페이지·SNS·학과 게시판 등을 활용하여 적극적으로 홍보해 달라고 요청하고 있습니다. 접수기간은 2026년 8월 12일부터 9월 30일까지이며, 접수는 그린리모델링 챌린지 공식 홈페이지를 통한 온라인 방식입니다. ---",
+    "todos": [
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "교내 관련 학과 및 대학원에 「제6회 그린리모델링 챌린지」 전자공문 시행",
+        "date": "2026. 9. 30. 이전"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "대학 홈페이지에 대회 개최 및 참가 안내 게시",
+        "date": "2026. 9. 30. 이전"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "대학 공식 SNS를 활용한 대회 홍보",
+        "date": "2026. 9. 30. 이전"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "관련 학과 게시판에 포스터 및 참가 안내 게시",
+        "date": "2026. 9. 30. 이전"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "대학(원)생 대상 해커톤 참여 안내 및 홍보",
+        "date": "2026. 9. 30. 이전"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "부문별 참가자격·제출자료·세부 유의사항을 공식 홈페이지에서 확인하도록 안내",
+        "date": "2026. 9. 30. 이전"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "일정",
+        "date": ""
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "2026. 8. 12.(수) ~ 9. 30.(수)",
+        "date": ""
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "10.17.(토)",
+        "date": ""
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "10.24.(토) ~ 10.25.(일)",
+        "date": ""
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "2026. 8. 12.(수) ~ 9. 30.(수)",
+        "date": ""
+      }
+    ],
+    "attachments": [
+      {
+        "icon": "ti-photo",
+        "name": "1. [포스터] 제6회 그린리모델링 챌린지 종합 포스터.png",
+        "desc": "「제6회 그린리모델링 챌린지」 종합 홍보 내용"
+      },
+      {
+        "icon": "ti-file-zip",
+        "name": "2. [포스터] 제6회 그린리모델링 챌린지 세부 홍보 포스터.zip",
+        "desc": "행사 부문별 세부 홍보 포스터로 추정되나, 압축파일 내부 내용은 제공된 공문 본문만으로 확인할 수 없음"
+      }
+    ],
+    "reply": false,
+    "memo": "행사는 국토교통부 주최, 국토안전관리원 주관입니다. 대학(원)생 참여 대상 부문은 다음과 같습니다. - 에너지 및 온실가스 저감 설계 - AI 플랫폼 아이디어 전체 참가부문은 사생대회, 해커톤, 온라인 공모전 등 총 7개 부문입니다. 부문별 참가자격, 제출자료 및 세부 유의사항은 그린리모델링 챌린지 공식 홈페이지를 참조하도록 안내되어 있습니다. 본문에 기재된 공식 홈페이지 주소는 `주소[2026grchallenge.com`으로 표시되어 있어 정확한 URL 표기는 [확인 필요]입니다. 공문상 별도 회신 의무, 홍보 결과 제출 의무 및 처리기한은 확인되지 않습니다. 첨부파일의 실제 세부 내용은 제공된 공문 본문만으로는 확인할 수 없습니다."
+  },
+  {
+    "id": 2,
+    "active": true,
+    "docNum": "기획팀-2026-1289",
+    "type": "internal",
+    "typeLabel": "내부",
+    "title": "「총장님과 함께하는 타운홀 미팅」 개최 안내",
+    "sender": "기획처장",
+    "receiver": "수신자참조",
+    "issued": "2026-08-13",
+    "received": "2026-08-14",
+    "deadline": "2026년 8월 21일(금)까지 참석 여부 제출",
+    "security": "평문 (공개)",
+    "summary": "한양여자대학교는 대학 발전과 구성원 간 소통 강화를 위해 「총장님과 함께하는 타운홀 미팅」을 개최합니다. 행사는 2026년 8월 31일(월) 13:30부터 14:10까지 도서관 3층 창작실에서 진행되며, 교원·직원·조교·총학생회·학생 등 대학 구성원 누구나 참여할 수 있습니다. 원활한 행사 준비를 위해 부서 및 학과별 대표 1인이 2026년 8월 21일(금)까지 구글폼으로 참석 여부를 제출해야 합니다. 학생 참석 여부는 총학생회에서 별도로 취합합니다. ---",
+    "todos": [
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "부서 또는 학과 구성원의 타운홀 미팅 참석 여부를 조사하여 취합",
+        "date": "2026년 8월 21일(금)까지"
+      },
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "참석 여부를 구글폼으로 제출",
+        "date": "2026년 8월 21일(금)까지"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "타운홀 미팅 참석 준비 및 행사 일정 공유",
+        "date": "2026년 8월 31일(월) 13:30까지"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "행사 참석 시 질의사항 및 의견 준비",
+        "date": ""
+      }
+    ],
+    "attachments": [],
+    "reply": true,
+    "memo": "행사는 2026년 8월 31일(월) 13:30~14:10에 도서관 3층 창작실에서 개최됩니다. 참석 대상은 교원, 직원, 조교, 총학생회, 학생 등 대학 구성원 누구나입니다. 음료 및 다과가 제공될 예정입니다. 공문에는 구글폼 링크가 `주소[forms.gle/2LuvKtm6n2ifJYwQ6`로 기재되어 있어 실제 접속 가능한 전체 링크는 [확인 필요]입니다. 공람 대상 9명 중 3명이 미열람 상태입니다.",
+    "replyDeadline": "2026년 8월 21일(금)까지",
+    "replyTo": "구글폼"
+  },
+  {
+    "id": 3,
+    "active": true,
+    "docNum": "교수학습팀-2026-733",
+    "type": "internal",
+    "typeLabel": "내부",
+    "title": "2026학년도 제1차 교수학습혁신센터 운영위원회 회의 개최 일정 및 장소 변경 안내",
+    "sender": "교수학습혁신센터장",
+    "receiver": "수신자참조",
+    "issued": "2026-08-13",
+    "received": "2026-08-19",
+    "deadline": "없음",
+    "security": "평문 (공개)",
+    "summary": "교육혁신팀-2026-1111(2026.07.31) 「교육혁신처 교수학습혁신센터 주관 위원회 위원 위촉 상신」을 관련 근거로 하여, 2026학년도 제1차 교수학습혁신센터 운영위원회 회의의 개최 일정 및 장소 변경을 안내하는 공문입니다. 회의는 2026년 8월 26일(수) 오전 10시 30분에 본관 115호에서 개최됩니다. 공문에 운영위원회 위원 12명의 명단이 제시되어 있으며, 수신자에게 회의 참석을 요청하고 있습니다. 현재 공람 대상 총 2명은 모두 미열람 상태입니다. ---",
+    "todos": [
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "공문 열람 및 회의 일정·장소 변경 내용 확인",
+        "date": ""
+      },
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "공문 열람 및 회의 일정·장소 변경 내용 확인",
+        "date": ""
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "2026학년도 제1차 교수학습혁신센터 운영위원회 회의 참석",
+        "date": "2026년 8월 26일(수) 오전 10시 30분"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "회의 장소 확인 및 참석 준비",
+        "date": "2026년 8월 26일(수) 오전 10시 30분 전"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "소속",
+        "date": "성명"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "사무행정과",
+        "date": "조영아"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "소프트웨어융합과",
+        "date": "김승종"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "사회복지과",
+        "date": "이금진"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "아동보육과",
+        "date": "이영신"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "패션산업과",
+        "date": "조연경"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "유아교육과",
+        "date": "조은지"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "IT콘텐츠융합과",
+        "date": "이준석"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "소프트웨어융합과",
+        "date": "김동형"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "실무중국어과",
+        "date": "김상원"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "식품영양학과",
+        "date": "김지영"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "보건행정과",
+        "date": "임현숙"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "학사팀",
+        "date": "윤동현"
+      }
+    ],
+    "attachments": [
+      {
+        "icon": "ti-file-text",
+        "name": "교육혁신처 교수학습혁신센터 주관 위원회 위원 위촉 상신.pdf",
+        "desc": "공문 본문에 관련 근거로 기재된 「교육혁신처 교수학습혁신센터 주관 위원회 위원 위촉 상신」 문서"
+      }
+    ],
+    "reply": false,
+    "memo": "본 공문은 운영위원회 회의의 **개최 일정 및 장소 변경 안내** 공문이나, 변경 전 일정 및 장소는 기재되어 있지 않습니다. 회의 일시는 **2026년 8월 26일(수) 오전 10시 30분**, 회의 장소는 **본관 115호**입니다. 공람현황상 총 2명 중 0명이 열람하여, 김승종 및 김동형은 공문을 아직 열람하지 않은 상태입니다. 첨부파일은 관련 근거 문서로 제시되어 있으나, 첨부파일 원문이 제공되지 않아 내용 확인이 필요합니다."
+  },
+  {
+    "id": 4,
+    "active": false,
+    "docNum": "대학혁신팀-2026-784",
+    "type": "internal",
+    "typeLabel": "내부",
+    "title": "[혁신] 2026학년도 자체평가위원회 위원 위촉 변경 알림",
+    "sender": "기획처장",
+    "receiver": "수신자참조",
+    "issued": "2026-08-13",
+    "received": "2026-08-19",
+    "deadline": "없음",
+    "security": "평문 (공개)",
+    "summary": "2026학년도(2차년도) 혁신지원사업 자체평가위원회의 위원 변경사항을 안내하는 공문입니다. 위촉기간은 2026. 3. 1.부터 2027. 2. 28.까지이며, 총학생회 회장 강효린이 학생대표로 추가 위촉되어 2026.08.01.부터 2027.02.28.까지 활동합니다. 위원장, 내부위원, 학생대표, 외부위원 및 간사 명단이 함께 안내되었습니다. 본문상 별도의 자료 제출이나 회신 요청은 확인되지 않습니다. ---",
+    "todos": [
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "자체평가위원회 위원 변경사항 확인 및 관련 업무에 참고",
+        "date": ""
+      }
+    ],
+    "attachments": [],
+    "reply": false,
+    "memo": "관련근거: - 대학혁신팀-2026-759(2026.08.06) 「[혁신] 2026학년도 자체평가위원회 위원 추가 위촉 상신」 - 대학혁신팀-2026-735(2026.07.30) 「2026년도 전문대학 혁신지원사업 위원회 학생위원(재학생) 추천 요청」 위촉기간: 2026. 3. 1. ~ 2027. 2. 28. 학생대표 강효린은 「학생대표(추가위촉)」으로 기재되어 있으며, 별도 활동기간은 2026.08.01. ~ 2027.02.28.입니다. 위원 명단: - 위원장: 신화정, 소프트웨어융합과 교수, 내부 - 위원: 김지영, 학생처 부처장, 내부 - 학생대표: 강효린, 총학생회 회장, 추가 위촉 - 학생대표: 백수민, 총학생회 부회장 - 외부위원: 변창우, 인하공업전문대학 교수 - 외부위원: 최상철, 백석문화대학교 혁신지원사업단장 - 외부위원: 박장선, 성동지역경제혁신센터 센터장 - 외부위원: 김용걸, 넥스모어시스템즈 대표이사 - 간사: 정승도, IR센터 센터장 - 간사: 박미림, 대학혁신팀 수석연구원 - 간사: 최유정, 대학혁신팀 연구원 공람현황: 총 9명 중 3명 열람, 6명 미열람. 미열람자: 김승종, 김동형, 하호진, 유화현, 정이진, 고은지. 공문에는 공개여부가 「공개」, 보안등급이 「평문」으로 기재되어 있으나, 지정 양식의 보안등급 기준에 따라 「일반」으로 표기했습니다."
+  },
+  {
+    "id": 5,
+    "active": false,
+    "docNum": "RISE AI인재양성센터-2026-85",
+    "type": "internal",
+    "typeLabel": "내부",
+    "title": "[앵커] 2026년도 AI 관련 학과 지원 사업 교원 역량 강화 프로그램 사전 활용계획서 제출 요청",
+    "sender": "RISE AI인재양성센터장",
+    "receiver": "수신자참조",
+    "issued": "2026-07-23",
+    "received": "2026-07-27",
+    "deadline": "2026년 8월 7일(수) 23:59까지",
+    "security": "평문 (공개)",
+    "summary": "AI인재양성센터는 「2026년도 교원 역량 강화 프로그램」의 원활한 운영과 교육 내용 반영을 위해 참여 교원의 활용계획서를 제출받고자 합니다. 제출 대상은 AI 교원 역량 강화 프로그램에 참여하는 교원입니다. 제출 서류는 붙임 2의 「2026 하계 AI데이터융합학부 AI 교육 확산 및 활용계획서(교원용)」이며, 학과별로 파일을 취합한 후 공문으로 제출해야 합니다. 제출 기한은 2026년 8월 7일 23:59까지입니다. ---",
+    "todos": [
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "AI 교원 역량 강화 프로그램 참여 교원의 활용계획서 작성 및 제출 서류 준비",
+        "date": "2026년 8월 7일(수) 23:59까지"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "참여 교원별 제출 파일을 학과 단위로 취합",
+        "date": "2026년 8월 7일(수) 23:59까지"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "학과별 취합 파일을 공문으로 제출",
+        "date": "2026년 8월 7일(수) 23:59까지"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "공람 미열람자 김동형 교수의 공문 열람 및 제출 대상 여부 확인",
+        "date": ""
+      }
+    ],
+    "attachments": [
+      {
+        "icon": "ti-file-text",
+        "name": "AI 교원 역량 강화 프로그램 참여 명단.pdf",
+        "desc": "AI 교원 역량 강화 프로그램 참여 교원 명단"
+      },
+      {
+        "icon": "ti-file-text",
+        "name": "2026 하계 AI데이터융합학부 AI 교육 확산 및 활용계획서(교원용).hwpx",
+        "desc": "AI 교원 역량 강화 프로그램 참여 교원이 작성하여 제출해야 하는 활용계획서 양식"
+      }
+    ],
+    "reply": true,
+    "memo": "관련 근거: RISE AI인재양성센터-2026-75(2026.07.16) 「[앵커] 2026년도 AI 관련 학과 지원 사업 교원 역량 강화 프로그램 참여 신청 안내(정정)」 공람 현황은 총 3명 중 2명 열람, 1명 미열람입니다. 미열람자는 김동형 교수(소프트웨어융합과)로 확인됩니다. 본문에는 제출 담당자와 정확한 회신처가 명시되어 있지 않아 확인이 필요합니다. 제출 기한의 날짜와 요일 표기가 일치하는지는 원문 또는 발신기관에 확인이 필요합니다.",
+    "replyDeadline": "2026년 8월 7일(수) 23:59까지",
+    "replyTo": ""
+  },
+  {
+    "id": 6,
+    "active": true,
+    "docNum": "RISE AI인재양성센터-2026-64",
+    "type": "internal",
+    "typeLabel": "내부",
+    "title": "[앵커] 2026년도 AI 관련 학과 지원 사업 교원 역량 강화 프로그램 참여 신청 안내",
+    "sender": "RISE AI인재양성센터장",
+    "receiver": "수신자참조",
+    "issued": "2026-07-07",
+    "received": "2026-07-20",
+    "deadline": "2026년 7월 15일(수) 15:00",
+    "security": "평문 (공개)",
+    "summary": "AI인재양성센터가 AI 관련 학과 지원 사업의 일환으로 교원의 AI 활용 역량 강화를 위한 「2026년도 교원 역량 강화 프로그램」을 운영합니다. 참여를 희망하는 교원은 신청서 및 개인정보 동의서를 작성하여 2026년 7월 15일(수) 15:00까지 이메일로 제출해야 합니다. 제출처는 앵커 AI인재양성센터 이채림 연구원의 이메일이며, 기한 내 미제출 시 해당사항 없음으로 간주됩니다. 프로그램의 세부 내용은 첨부된 교육 계획서에서 확인할 수 있습니다. ---",
+    "todos": [
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "「교원 역량 강화 프로그램_신청서 및 개인정보 동의서」 작성 및 제출",
+        "date": "2026년 7월 15일(수) 15:00"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "「멀티 LLM 기반 AI Agent + Vibe coding 실무 교육 계획서」 확인 후 프로그램 참여 여부 검토",
+        "date": "2026년 7월 15일(수) 15:00 이전"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "작성한 신청서 및 개인정보 동의서를 이메일로 제출",
+        "date": "2026년 7월 15일(수) 15:00"
+      }
+    ],
+    "attachments": [
+      {
+        "icon": "ti-file-text",
+        "name": "1. 멀티 LLM 기반 AI Agent + Vibe coding 실무 교육 계획서.pdf",
+        "desc": "멀티 LLM 기반 AI Agent 및 Vibe coding 실무 교육 관련 계획"
+      },
+      {
+        "icon": "ti-file-text",
+        "name": "2. 교원 역량 강화 프로그램_신청서 및 개인정보 동의서.hwp",
+        "desc": "2026년도 교원 역량 강화 프로그램 참여 신청 및 개인정보 수집·이용 동의"
+      }
+    ],
+    "reply": true,
+    "memo": "관련 근거: RISE AI인재양성센터-2026-58(2026.07.03) 「[RISE] 2026년도 AI 관련 학과 지원 사업 교원 역량 강화 프로그램 운영 협조 요청」 공문상 제출 기한은 2026년 7월 15일(수) 15:00로 명시되어 있음. 시행일자는 2026-07-07이며, 접수일자는 소프트웨어융합과-2026-854(2026-07-20)로 기재되어 있어 접수일자가 제출 기한 이후임. 날짜 관계에 대한 별도 설명은 공문에 없음. 공람현황: 총 9명 중 8명 열람, 1명 미열람. 미열람자는 김동형(교수, 소프트웨어융합과)임. 공개여부는 공개이며, 보안등급은 평문임.",
+    "replyDeadline": "2026년 7월 15일(수) 15:00",
+    "replyTo": "chae1imee@hywoman.ac.kr, 앵커 AI인재양성센터 이채림 연구원"
+  },
+  {
+    "id": 7,
+    "active": true,
+    "docNum": "AI혁신지원팀-2026-266",
+    "type": "internal",
+    "typeLabel": "내부",
+    "title": "AI 적용 가능 행정업무 발굴 수요조사 실시 안내",
+    "sender": "기획처장",
+    "receiver": "수신자참조",
+    "issued": "2026-07-03",
+    "received": "2026-07-03",
+    "deadline": "2026.7.09.(목) 오후 4시",
+    "security": "평문 (공개)",
+    "summary": "행정부서의 반복·정형 업무, 자료 검토, 문서 작성, 민원·안내 업무 등 AI를 적용하여 개선할 수 있는 행정업무를 발굴하기 위한 수요조사를 실시합니다. 각 행정부서는 직원 및 조교 등 행정업무 담당자가 설문에 참여할 수 있도록 협조해야 합니다. 제출된 조사 내용은 향후 행정 AI 에이전트 개발을 위한 기초자료로 활용될 예정입니다. 조사는 네이버폼을 통해 2026년 7월 9일 오후 4시까지 제출해야 합니다. ---",
+    "todos": [
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "AI 적용을 통해 개선 가능한 행정업무를 발굴하고 수요조사에 응답",
+        "date": "2026.7.09.(목) 오후 4시"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "직원 및 조교 등 행정업무 담당자가 설문에 참여할 수 있도록 안내 및 협조",
+        "date": "2026.7.09.(목) 오후 4시까지"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "첨부된 수요조사서 문항을 확인한 후 설문 응답 내용 준비",
+        "date": ""
+      }
+    ],
+    "attachments": [
+      {
+        "icon": "ti-file-text",
+        "name": "AI 적용 가능 행정업무 발굴 수요조사서(문항 확인용).pdf",
+        "desc": "AI 적용 가능 행정업무 발굴 수요조사의 설문 문항 확인용 자료"
+      }
+    ],
+    "reply": true,
+    "memo": "조사기간은 `2026.7.3.(금) ~ 7.09.(목) 오후 4시, 7일간`으로 명시되어 있습니다. 공문에는 공개여부가 `공개`, 보안등급이 `평문`으로 기재되어 있습니다. 공람현황은 총 9명 중 8명 열람, 1명 미열람이며, 미열람자는 `김동형(교수,소프트웨어융합과)`입니다. 수신자는 `수신자참조`로 기재되어 있어 구체적인 수신 담당자는 [확인 필요]입니다. 제출된 내용은 향후 행정 AI 에이전트 개발을 위한 기초자료로 활용될 예정입니다.",
+    "replyDeadline": "2026.7.09.(목) 오후 4시",
+    "replyTo": "네이버폼"
+  },
+  {
+    "id": 8,
+    "active": true,
+    "docNum": "입학홍보팀-2026-1376",
+    "type": "internal",
+    "typeLabel": "내부",
+    "title": "2027학년도 신입생모집 고교입시홍보 방문희망자 온라인 신청안내",
+    "sender": "입학홍보실장",
+    "receiver": "수신자참조",
+    "issued": "2026-06-23",
+    "received": "2026-06-25",
+    "deadline": "고교방문 선택: 2026. 7. 8(수) 16:00까지 / 증빙서류 제출: 9월 22일(화)까지",
+    "security": "평문 (공개)",
+    "summary": "2027학년도 신입생모집과 관련하여 2026학년도 서울 및 경기지역 지원·등록 고등학교 779개교를 대상으로 고교입시홍보 방문을 실시합니다. 고교입시홍보 방문희망교수는 2026. 7. 1(수)부터 7. 8(수) 16:00까지 대학 홈페이지의 입시고교홍보방문 선택서비스에서 방문 희망 고교를 선택해야 합니다. 방문 대상은 전임교원이며, 일반전임교원은 필히 참여해야 합니다. 방문 일정은 2026. 8. 24(월)부터 9. 21(월)까지 중 선택하고, 방문 후 설문지·면담교사 명함·사진을 제출해야 합니다. 방문 결과 개인별 설문지는 9월 22일(화)까지 학과에서 취합하여 전자공문으로 제출하며, 해당 활동은 교원업적평가 봉사영역에 반영됩니다. ---",
+    "todos": [
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "대학 홈페이지‣입학안내‣입시고교홍보방문 선택서비스에서 방문 희망 고교 1개교 선택 및 저장",
+        "date": "2026. 7. 8(수) 16:00까지"
+      },
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "일반전임교원은 고교입시홍보 방문 참여 여부 및 방문 고교 선택",
+        "date": "방문고교 선택기간 내, 2026. 7. 8(수) 16:00까지"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "필요한 경우 동반교수를 선택하고, 동반교수의 승인 완료 여부 확인",
+        "date": ""
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "선택한 일정에 서울·경기·인천 소재 고등학교 방문 실시",
+        "date": "2026. 8. 24(월) ~ 9. 21(월) 중 선택일"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "고교방문 시 홍보용 팜플렛 20부 및 홍보기념품 3개 배부",
+        "date": "고교 방문일"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "방문 후 방문 결과 개인별 설문지 작성 및 하단의 교수대상 온라인 설문조사 실시",
+        "date": "방문 후, 2026. 9. 22(화)까지"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "설문지에 면담교사 명함 및 방문 사진 첨부",
+        "date": "2026. 9. 22(화)까지"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "진학담당교사 명함을 반드시 제출",
+        "date": "2026. 9. 22(화)까지"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "방문 결과 설문지 및 증빙서류를 학과에서 취합하여 전자공문으로 제출",
+        "date": "2026. 9. 22(화)까지"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "1인 2고교 이상 신청이 필요한 경우 추가사항 및 사유를 기재하여 학과에서 입학팀으로 공문 발송",
+        "date": ""
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "고교선택 완료 및 방문승인 결재 후 고교 홍보 수당 및 홍보자료 지급 여부 확인",
+        "date": "방문승인 결재 후"
+      }
+    ],
+    "attachments": [
+      {
+        "icon": "ti-file-text",
+        "name": "2027 고교입시홍보 방문결과 개인별 설문지.hwpx",
+        "desc": "고교입시홍보 방문 결과를 개인별로 작성하는 설문지로 추정되며, 본문에 따라 면담교사 명함 및 방문 사진을 첨부해야 함"
+      },
+      {
+        "icon": "ti-presentation",
+        "name": "고교입시홍보 신청 메뉴얼.pptx",
+        "desc": "대학 홈페이지의 입시고교홍보방문 선택서비스를 통한 고교 검색, 고교 선택 저장, 동반교수 선택 및 승인 절차 안내"
+      }
+    ],
+    "reply": true,
+    "memo": "관련근거: 입학홍보팀-2026-1271(2026.06.11) “2027학년도 신입생모집 고교입시홍보 방문계획 상신” 방문 대상은 서울 및 경기·인천 소재 일반계 및 전문계 고교 등 779개교입니다. 가급적 본교 지원자 수 20명 이상인 고교에 신청하도록 안내하고 있습니다. 방문 대상 교원은 전임교원이며, 일반전임교원은 필히 참여해야 합니다. 교육중점전임교원과 산학협력중점교원도 방문단 구성 대상에 포함됩니다. 고교 홍보 수당은 1개 고교당 50,000원이며, 고교선택 완료 및 방문승인 결재 후 지급 예정입니다. 공문상 방문일의 요일 표기가 실제 달력과 일치하는지는 별도로 확인하지 않았으며, 본 리포트에는 원문 표기를 그대로 기재했습니다. 공람현황: 총 9명 중 8명 열람, 미열람 1명 — 김동형(교수, 소프트웨어융합과) 해당 활동은 교원업적평가 봉사영역의 4-01)-(02) “학교 발전을 위한 활동”에 반영됩니다.",
+    "replyDeadline": "2026. 9. 22(화)",
+    "replyTo": "입학팀, 학과 취합 후 전자공문 제출"
+  },
+  {
+    "id": 9,
+    "active": true,
+    "docNum": "경영기획실-1281",
+    "type": "external",
+    "typeLabel": "외부",
+    "title": "지방공기업평가원 정보화 사업 제안서 평가위원 인력 풀(Pool) 모집안내",
+    "sender": "지방공기업평가원이사장",
+    "receiver": "수신자참조",
+    "issued": "2026-02-06",
+    "received": "2026-02-09",
+    "deadline": "상시모집",
+    "security": "평문 (공개)",
+    "summary": "지방공기업평가원이 정보화사업 제안서 평가의 전문성과 공정성을 확보하기 위해 평가위원 인력 풀(Pool)을 상시 모집합니다. 모집 분야는 정보화 사업관리, IT 전략, 정보시스템, 정보통신, 정보보호 및 보안, 콘텐츠(웹), 스마트 기술입니다. 지원 희망자는 지방공기업평가원 전문가 통합 관리시스템에 회원가입 후 이력을 등록해야 합니다. 관련 공무원·공공기관 재직자, IT분야 기술사, 관련 분야 학위 취득자, 관련 학과 조교수 이상 등이 자격 대상에 포함됩니다. ---",
+    "todos": [
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "모집 분야 및 자격기준에 해당하는 대상자에게 모집 안내 공람·전파",
+        "date": "상시모집"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "평가위원 인력 풀 참여 희망자는 지방공기업평가원 전문가 통합 관리시스템 회원가입",
+        "date": "상시모집"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "전문가 통합 관리시스템에 개인 이력 등록",
+        "date": "상시모집"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "모집 분야 및 자격기준 충족 여부 확인",
+        "date": "상시모집"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "공람 대상자 중 미열람자 4명에게 공문 내용 안내 및 열람 여부 확인",
+        "date": ""
+      }
+    ],
+    "attachments": [
+      {
+        "icon": "ti-file-text",
+        "name": "지방공기업평가원 정보화 사업 제안서 평가위원 인력 풀(Pool) 모집안내.hwpx",
+        "desc": "정보화 사업 제안서 평가위원 인력 풀(Pool) 모집 안내"
+      }
+    ],
+    "reply": false,
+    "memo": "본 공문은 지방공기업평가원의 정보화 사업 제안서 평가위원 인력 풀(Pool) 참여자를 모집하는 안내 공문입니다. 모집은 상시모집으로 별도의 종료일은 명시되지 않았습니다. 참여 방법은 지방공기업평가원 전문가 통합 관리시스템 회원가입 및 이력 등록입니다. 자격기준 중 학위 관련 요건은 박사 학위 취득 후 3년 이상, 석사 학위 취득 후 5년 이상 연구 또는 실무 경험입니다. 공문상 공개여부는 공개이며, 보안등급은 평문으로 기재되어 있습니다. 공람 현황은 총 24명 중 20명 열람, 4명 미열람입니다. 시스템 주소는 원문에 `expert.erc.re.kr`로 기재되어 있으나, 링크 표기가 완전한지 여부는 [확인 필요]입니다."
+  },
+  {
+    "id": 10,
+    "active": true,
+    "docNum": "대학일자리플러스센터-2024-1130",
+    "type": "internal",
+    "typeLabel": "내부",
+    "title": "[대학일자리플러스센터] 코딩테스트 대비 교육(온라인) 참여자 모집협조 요청",
+    "sender": "대학일자리플러스센터장",
+    "receiver": "수신자참조",
+    "issued": "2025-01-15",
+    "received": "2025-01-15",
+    "deadline": "2025년 1월 16일 16시까지로 추정되나, 공문상 게시 완료 기한은",
+    "security": "평문 (공개)",
+    "summary": "한양여자대학교 대학일자리플러스센터는 수요조사 결과를 바탕으로 국내 IT플랫폼 기업 채용과정에 대비하기 위한 「코딩테스트 대비 교육(온라인)」을 실시하고자 합니다. 수신기관에는 붙임 포스터를 온라인 및 오프라인 학과게시판에 게시해 참여자 모집을 협조해 달라고 요청했습니다. 신청기간은 2025년 1월 14일부터 1월 16일 16시까지이며, 모집인원은 총 50명으로 Python 30명, Java 20명입니다. 교육은 2025년 1월 20일부터 2월 5일까지 온라인으로 진행되고, 수강기간 내 자격시험이 1일 실시됩니다. ---",
+    "todos": [
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "붙임 2 포스터를 온라인 학과게시판에 게시",
+        "date": "— 신청 마감은 2025년 1월 16일 16시까지"
+      },
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "붙임 2 포스터를 오프라인 학과게시판에 게시",
+        "date": "— 신청 마감은 2025년 1월 16일 16시까지"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "교육 참여 희망자에게 신청기간, 신청방법, 대상 및 모집인원 안내",
+        "date": "2025년 1월 16일 16시까지"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "교육 운영기간 및 자격시험 일정 관련 참여자 안내",
+        "date": "2025년 1월 20일 전"
+      }
+    ],
+    "attachments": [
+      {
+        "icon": "ti-file-text",
+        "name": "붙임1. [대학일자리플러스센터] 코딩테스트 대비 교육(온라인) 운영계획(안).hwpx",
+        "desc": "- 사업명: 코딩테스트 대비 교육(온라인)"
+      },
+      {
+        "icon": "ti-photo",
+        "name": "붙임2. 포스터 1부.jpg",
+        "desc": "- 코딩테스트 대비 교육(온라인) 참여자 모집 안내"
+      }
+    ],
+    "reply": false,
+    "memo": "관련근거는 `대학일자리플러스센터-2024-1129(2025.01.14) \"[대학일자리플러스센터] 코딩테스트 대비 교육(온라인) 운영계획(안) 수립\"`입니다. 공문 시행일자와 접수일자는 모두 2025년 1월 15일입니다. 신청기간은 공문 접수일 기준 이미 진행 중이며, 신청 마감은 2025년 1월 16일 16시입니다. 공문상 수신자는 `수신자참조`로 되어 있어 구체적인 수신 부서 및 담당자는 [확인 필요]입니다. 교육과정 표는 원문 형식상 열 구분이 불명확하므로, 과정별 영상시간 및 세부 내용은 첨부 1 원본 확인이 필요합니다. 공람 미열람자는 김동형 교수(소프트웨어융합과) 1명입니다."
+  },
+  {
+    "id": 11,
+    "active": false,
+    "docNum": "정보통신담당관-18140",
+    "type": "external",
+    "typeLabel": "외부",
+    "title": "「경상남도 데이터허브 시범솔루션 발굴사업」제안서 평가위원회 예비위원 모집 알림",
+    "sender": "경상남도지사",
+    "receiver": "수신자참조",
+    "issued": "2026-08-19",
+    "received": "2026-08-19",
+    "deadline": "2026. 8. 25.(화) 17:00까지",
+    "security": "평문 (공개)",
+    "summary": "경상남도는 국토교통부 데이터허브 시범솔루션 발굴사업 공모 선정에 따라 「데이터허브 기반 경남AI관광서비스 플랫폼 구축」사업을 추진합니다. 사업자 선정 평가위원회의 공정하고 투명한 평가를 위해 정보통신 및 관광 분야 전문가를 대상으로 평가위원회 예비위원 21명을 공개모집합니다. 모집기간은 2026. 8. 19.(수)부터 2026. 8. 25.(화) 17:00까지이며, 공문 또는 이메일로 접수할 수 있습니다. 평가일시는 2026. 9. 3.(목) 14:00 예정이나 변경될 수 있으며, 후보자 등록 신청 사실에 대한 보안 유지가 요구됩니다. ---",
+    "todos": [
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "정보통신(SI, AI, 데이터) 및 관광 분야 전문가에게 평가위원회 예비위원 모집 공고를 안내하고 참여를 독려",
+        "date": "2026. 8. 25.(화) 17:00까지"
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "예비위원 참여 희망자의 신청서를 공문 또는 이메일(lgh10291@korea.kr)로 접수",
+        "date": "2026. 8. 25.(화) 17:00까지"
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "평가위원 후보자 등록 신청 사실에 대한 보안 유지",
+        "date": ""
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "2026. 9. 3.(목) 14:00 예정인 평가일정 확인 및 참석 준비",
+        "date": "2026. 9. 3.(목) 14:00 예정"
+      }
+    ],
+    "attachments": [
+      {
+        "icon": "ti-file-text",
+        "name": "「경상남도 데이터허브 시범솔루션 발굴사업」제안서 평가위원회 예비위원 모집 공고.hwpx",
+        "desc": "「데이터허브 기반 경남AI관광서비스 플랫폼 구축」사업의 제안서 평가위원회 예비위원 모집 관련 공고문으로 추정됨. 세부 내용은 첨부파일 본문 확인 필요."
+      }
+    ],
+    "reply": true,
+    "memo": "모집 분야는 정보통신(SI, AI, 데이터) 및 관광입니다. 모집인원은 21명이며, 평가위원 구성인원의 3배수입니다. 평가일시는 2026. 9. 3.(목) 14:00 예정이나 변경될 수 있습니다. 접수방법은 공문 또는 이메일(lgh10291@korea.kr)입니다. 평가위원 후보자 등록 신청 사실에 대한 보안 유지가 요구됩니다. 첨부파일 본문은 제공된 내용에 포함되어 있지 않아 세부 자격요건, 제출서류, 신청서 양식, 선정기준 등은 [확인 필요]입니다. 공람현황상 총 26명 중 1명만 열람하고 25명이 미열람 상태이므로, 관련 학과 및 대상자에 대한 추가 안내가 필요합니다.",
+    "replyDeadline": "2026. 8. 25.(화) 17:00까지",
+    "replyTo": "경상남도, 공문 또는 이메일(lgh10291@korea.kr)"
+  },
+  {
+    "id": 12,
+    "active": false,
+    "docNum": "총무-293",
+    "type": "external",
+    "typeLabel": "외부",
+    "title": "교수초빙 심사위원 추천의뢰",
+    "sender": "수원과학대학교총장",
+    "receiver": "수신자참조",
+    "issued": "2026-08-18",
+    "received": "2026-08-19",
+    "deadline": "없음",
+    "security": "평문 (비공개(6))",
+    "summary": "수원과학대학교에서 교수초빙 심사위원 추천을 의뢰하는 문서입니다. 본문에는 전자문서유통포털에서 작성된 문서임을 안내하고, 붙임 파일의 공문서를 확인하도록 요청하고 있습니다. 심사위원 추천과 관련된 구체적인 대상, 절차, 제출기한 및 제출방법은 첨부파일을 확인해야 하며, 본문만으로는 확인되지 않습니다. 문서는 비공개(6)로 지정되어 있으며, 보안등급은 평문으로 표시되어 있습니다. ---",
+    "todos": [
+      {
+        "level": "red",
+        "icon": "ti-alert-triangle",
+        "text": "첨부된 「교수초빙 심사위원 추천의뢰」 공문 확인",
+        "date": ""
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "「심사위원추천서 양식」 및 「교수초빙 모집학과 및 전공 현황」 확인",
+        "date": ""
+      },
+      {
+        "level": "yellow",
+        "icon": "ti-point",
+        "text": "교수초빙 심사위원 추천 필요 여부 및 추천 대상 검토",
+        "date": ""
+      },
+      {
+        "level": "green",
+        "icon": "ti-check",
+        "text": "심사위원 추천서 작성·제출 방법 및 회신기한 확인",
+        "date": ""
+      }
+    ],
+    "attachments": [
+      {
+        "icon": "ti-file-text",
+        "name": "교수초빙 심사위원 추천의뢰 .pdf",
+        "desc": "교수초빙 심사위원 추천의뢰 관련 문서로 추정됨"
+      },
+      {
+        "icon": "ti-file-text",
+        "name": "02 심사위원추천서 양식.hwp",
+        "desc": "교수초빙 심사위원 추천서 작성 양식으로 추정됨"
+      },
+      {
+        "icon": "ti-file-text",
+        "name": "01 교수초빙 모집학과 및 전공 현황(수원과학대학교).pdf",
+        "desc": "수원과학대학교 교수초빙 모집학과 및 전공 현황 자료로 추정됨"
+      }
+    ],
+    "reply": false,
+    "memo": "본문에는 첨부 공문서를 확인하라는 안내만 있으며, 교수초빙 심사위원 추천에 관한 세부사항은 첨부파일에 있을 것으로 보입니다. 공개여부는 `비공개(6)`, 보안등급은 `평문`으로 각각 기재되어 있으므로 문서 취급 시 비공개 지정에 유의해야 합니다. 공람현황에는 총 55명 중 10명 열람·45명 미열람으로 기재되어 있으나, 괄호 안에는 15명의 성명과 소속이 열거되어 있어 명단의 의미 및 집계 기준은 [확인 필요]합니다. 첨부파일의 실제 내용이 제공되지 않아 추천 대상, 추천서 제출기한, 회신처, 담당자 및 처리절차는 확인할 수 없습니다."
+  }
+];
+
+const expandedIds = new Set();
+// 각 그룹 내부에서는 하나만 선택되고, 서로 다른 그룹의 조건은 함께 적용됩니다.
+let statusFilter   = null; // active | inactive
+let originFilter   = null; // external | internal
+let priorityFilter = null; // urgent | normal
+let sampleCount    = 2;
+
+function isUrgentCard(card) {
+  return card.todos.some(t => t.level === 'red');
+}
+
+function getFilteredCards() {
+  return cards.filter(c => {
+    const statusOk = !statusFilter || (statusFilter === 'active' ? c.active : !c.active);
+    const originOk = !originFilter || c.type === originFilter;
+    const urgent = isUrgentCard(c);
+    const priorityOk = !priorityFilter || (priorityFilter === 'urgent' ? urgent : !urgent);
+    return statusOk && originOk && priorityOk;
+  });
+}
+
+function setExclusiveFilter(group, value) {
+  // 이미 선택된 항목을 다시 클릭하면 선택 해제 → 해당 카테고리 전체 표시
+  const current = { status: statusFilter, origin: originFilter, priority: priorityFilter }[group];
+  if (current === value) value = null;
+
+  if (group === 'status') statusFilter = value;
+  if (group === 'origin') originFilter = value;
+  if (group === 'priority') priorityFilter = value;
+
+  const groups = {
+    status: ['active', 'inactive'],
+    origin: ['external', 'internal'],
+    priority: ['urgent', 'normal']
+  };
+  groups[group].forEach(key => {
+    const el = document.getElementById('ftab-' + key);
+    if (!el) return;
+    el.classList.toggle(key === 'urgent' ? 'active-tab-urgent' : 'active-tab-type', key === value);
+  });
+  updateFilterLabel();
+  renderCards();
+}
+
+function setStatusFilter(value) { setExclusiveFilter('status', value); }
+function setOriginFilter(value) { setExclusiveFilter('origin', value); }
+function setPriorityFilter(value) { setExclusiveFilter('priority', value); }
+
+function resetAllFilters() {
+  statusFilter = originFilter = priorityFilter = null;
+  ['active','inactive','external','internal','normal'].forEach(key => {
+    const el = document.getElementById('ftab-' + key);
+    if (el) el.classList.remove('active-tab-type');
+  });
+  const urgentBtn = document.getElementById('ftab-urgent');
+  if (urgentBtn) urgentBtn.classList.remove('active-tab-urgent');
+  updateFilterLabel();
+  renderCards();
+}
+
+function updateFilterLabel() {
+  const labels = {
+    active:'활성', inactive:'비활성', external:'외부공문', internal:'내부공문',
+    urgent:'긴급', normal:'일반'
+  };
+  const parts = [statusFilter, originFilter, priorityFilter].filter(Boolean).map(v => labels[v]);
+  const labelEl = document.getElementById('filter-active-label');
+  const resetBtn = document.getElementById('filter-reset-btn');
+  if (parts.length) {
+    labelEl.textContent = parts.join(' + ');
+    labelEl.classList.add('visible');
+    resetBtn.style.display = 'flex';
+  } else {
+    labelEl.textContent = '';
+    labelEl.classList.remove('visible');
+    resetBtn.style.display = 'none';
+  }
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = cards.length;
+  document.getElementById('stat-active').textContent = cards.filter(c => c.active).length;
+  document.getElementById('stat-urgent').textContent = cards.filter(c => c.active && c.todos.some(t => t.level === 'red')).length;
+}
+
+function renderCards() {
+  const list = document.getElementById('card-list');
+  const filtered = getFilteredCards();
+  document.getElementById('count-label').textContent = filtered.length;
+  updateStats();
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state"><i class="ti ti-file-off" aria-hidden="true"></i><p>해당 조건의 공문이 없습니다.</p></div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(c => cardHTML(c)).join('');
+  equalizeCardHeights();
+}
+
+/* 카드 높이 균일화
+   - 접힌 카드: 모든 카드의 '접힘 상태 자연 높이' 중 최댓값으로 통일
+   - 펼친 카드: 모든 카드의 '펼침 상태 자연 높이'의 평균값으로 통일,
+     내용이 넘치는 카드는 .gm-body 내부 스크롤로 열람 */
+function equalizeCardHeights() {
+  const cardEls = [...document.querySelectorAll('#card-list .gm-card')];
+  if (!cardEls.length) return;
+
+  const collapsedHeights = [], expandedHeights = [];
+  cardEls.forEach(el => {
+    el.style.height = '';                     // 측정 전 초기화
+    const body = el.querySelector('.gm-body');
+    const wasOpen = body && body.classList.contains('open');
+    if (body) body.classList.remove('open');
+    collapsedHeights.push(el.offsetHeight);   // 접힘 자연 높이
+    if (body) {
+      body.classList.add('open');
+      expandedHeights.push(el.offsetHeight);  // 펼침 자연 높이
+      if (!wasOpen) body.classList.remove('open');
+    }
+  });
+
+  const hCollapsed = Math.max(...collapsedHeights);
+  const hExpanded = Math.round(expandedHeights.reduce((a, b) => a + b, 0) / expandedHeights.length);
+
+  cardEls.forEach(el => {
+    const body = el.querySelector('.gm-body');
+    const isOpen = body && body.classList.contains('open');
+    el.style.height = (isOpen ? hExpanded : hCollapsed) + 'px';
+  });
+}
+
+// 창 크기가 바뀌면 자연 높이도 달라지므로 다시 계산
+let _eqResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_eqResizeTimer);
+  _eqResizeTimer = setTimeout(equalizeCardHeights, 150);
+});
+
+function cardHTML(c) {
+  const isOpen = expandedIds.has(c.id);
+  const urgentCount = c.todos.filter(t => t.level === 'red').length;
+
+  const badges = `
+    <span class="gm-badge ${c.type === 'internal' ? 'badge-internal' : 'badge-external'}">
+      <i class="ti ${c.type === 'internal' ? 'ti-building' : 'ti-world'}" aria-hidden="true" style="font-size:11px"></i>${c.typeLabel}
+    </span>
+    ${!c.active ? `<span class="gm-badge badge-inactive"><i class="ti ti-archive" aria-hidden="true" style="font-size:10px"></i> 비활성</span>` : ''}
+    ${urgentCount > 0 ? `<span class="gm-badge badge-urgent"><i class="ti ti-alert-triangle" aria-hidden="true" style="font-size:10px"></i> 긴급 ${urgentCount}</span>` : ''}
+    ${c.attachments.length > 0 ? `<span class="gm-badge badge-attach"><i class="ti ti-paperclip" aria-hidden="true" style="font-size:10px"></i> ${c.attachments.length}</span>` : ''}
+    ${c.reply ? `<span class="gm-badge badge-reply"><i class="ti ti-send" aria-hidden="true" style="font-size:10px"></i> 회신필요</span>` : ''}
+  `;
+
+  const infoGrid = `
+    <div class="gm-info-grid">
+      <div class="gm-info-item"><span class="gm-info-k">발신</span><span class="gm-info-v">${c.sender}</span></div>
+      <div class="gm-info-item"><span class="gm-info-k">수신</span><span class="gm-info-v">${c.receiver}</span></div>
+      <div class="gm-info-item"><span class="gm-info-k">시행일자</span><span class="gm-info-v">${c.issued}</span></div>
+      <div class="gm-info-item"><span class="gm-info-k">접수일자</span><span class="gm-info-v">${c.received}</span></div>
+      <div class="gm-info-item"><span class="gm-info-k">처리기한</span><span class="gm-info-v deadline">${c.deadline}</span></div>
+      <div class="gm-info-item"><span class="gm-info-k">보안등급</span><span class="gm-info-v">${c.security}</span></div>
+    </div>`;
+
+  const todos = c.todos.map(t => `
+    <div class="gm-todo ${t.level}">
+      <i class="ti ${t.icon} gm-todo-icon" aria-hidden="true"></i>
+      <div class="gm-todo-text">${t.text}</div>
+      <div class="gm-todo-date">${t.date}</div>
+    </div>`).join('');
+
+  const attachs = c.attachments.length > 0
+    ? c.attachments.map(a => `
+      <div class="gm-attach">
+        <i class="ti ${a.icon}" aria-hidden="true"></i>
+        <div><div class="gm-attach-name">${a.name}</div><div class="gm-attach-desc">${a.desc}</div></div>
+      </div>`).join('')
+    : `<div style="font-size:13px;color:var(--text-muted);padding:4px 0"><i class="ti ti-file-off" aria-hidden="true" style="margin-right:6px"></i>첨부파일 없음</div>`;
+
+  const replyBlock = c.reply ? `
+    <div class="gm-section">
+      <div class="gm-section-label"><i class="ti ti-send" aria-hidden="true" style="font-size:12px"></i> 회신</div>
+      <div class="gm-reply-box">
+        <i class="ti ti-circle-check" aria-hidden="true"></i>
+        <div>
+          <div class="gm-reply-label">회신 필요 — 기한: ${c.replyDeadline}</div>
+          <div class="gm-reply-detail">${c.replyTo}</div>
+        </div>
+      </div>
+    </div>` : '';
+
+  return `
+  <div class="gm-card ${c.active ? 'active' : 'inactive'}" id="card-${c.id}" role="listitem">
+    <div class="gm-card-head" onclick="${c.active ? `toggleCard(${c.id})` : ''}"
+         role="${c.active ? 'button' : ''}"
+         aria-expanded="${isOpen}"
+         ${c.active ? `tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')toggleCard(${c.id})"` : ''}>
+      <div class="gm-badge-col">${badges}</div>
+      <div class="gm-head-main">
+        <div class="gm-doc-num"><i class="ti ti-file-description" aria-hidden="true" style="font-size:12px;margin-right:3px"></i>${c.docNum}</div>
+        <div class="gm-title">${c.title}</div>
+        <div class="gm-meta-row">
+          <div class="gm-meta"><i class="ti ti-building-bank" aria-hidden="true"></i>${c.sender.split(' ')[0]}</div>
+          <div class="gm-meta"><i class="ti ti-calendar-event" aria-hidden="true"></i>시행 ${c.issued}</div>
+          <div class="gm-meta${urgentCount > 0 ? ' danger' : ''}"><i class="ti ti-clock" aria-hidden="true"></i>기한 ${c.deadline}</div>
+        </div>
+      </div>
+      ${c.active ? `
+      <button class="gm-toggle-btn ${isOpen ? 'open' : ''}"
+              onclick="event.stopPropagation();toggleCard(${c.id})"
+              aria-label="${isOpen ? '접기' : '펼치기'}">
+        ${isOpen ? '접기' : '펼치기'}<i class="ti ti-chevron-down chevron" aria-hidden="true"></i>
+      </button>` : ''}
+    </div>
+
+    <div class="gm-body ${isOpen ? 'open' : ''}" id="body-${c.id}">
+      <div class="gm-divider" style="margin-bottom:16px"></div>
+
+      <div class="gm-section">
+        <div class="gm-section-label"><i class="ti ti-info-circle" aria-hidden="true" style="font-size:12px"></i> 기본 정보</div>
+        ${infoGrid}
+      </div>
+
+      <div class="gm-section">
+        <div class="gm-section-label"><i class="ti ti-align-left" aria-hidden="true" style="font-size:12px"></i> 핵심 요약</div>
+        <div class="gm-summary">${c.summary}</div>
+      </div>
+
+      <div class="gm-section">
+        <div class="gm-section-label"><i class="ti ti-checklist" aria-hidden="true" style="font-size:12px"></i> To Do 목록</div>
+        <div class="gm-todo-list">${todos}</div>
+      </div>
+
+      <div class="gm-section">
+        <div class="gm-section-label"><i class="ti ti-paperclip" aria-hidden="true" style="font-size:12px"></i> 첨부파일</div>
+        <div class="gm-attach-list">${attachs}</div>
+      </div>
+
+      ${replyBlock}
+
+      <div class="gm-section">
+        <div class="gm-section-label"><i class="ti ti-notes" aria-hidden="true" style="font-size:12px"></i> 에이전트 메모</div>
+        <div class="gm-memo">${c.memo}</div>
+      </div>
+    </div>
+
+    <div class="gm-card-foot">
+      <div class="gm-foot-left">
+        <div class="gm-status-dot ${c.active ? 'active' : 'inactive'}"></div>
+        <span class="gm-status-text">${c.active ? '활성' : '비활성'} · ${c.type === 'internal' ? '내부공문' : '외부공문'}</span>
+      </div>
+      <button class="gm-action-btn" onclick="toggleActive(${c.id})">
+        <i class="ti ${c.active ? 'ti-archive' : 'ti-refresh'}" aria-hidden="true"></i>
+        ${c.active ? '비활성화' : '활성화'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function toggleCard(id) {
+  const card = cards.find(c => c.id === id);
+  if (!card || !card.active) return;
+  if (expandedIds.has(id)) expandedIds.delete(id);
+  else expandedIds.add(id);
+  renderCards();
+}
+
+function toggleActive(id) {
+  const card = cards.find(c => c.id === id);
+  if (!card) return;
+  card.active = !card.active;
+  if (!card.active) expandedIds.delete(id);
+  renderCards();
+}
+
+function expandAll() {
+  getFilteredCards().filter(c => c.active).forEach(c => expandedIds.add(c.id));
+  renderCards();
+}
+
+function collapseAll() {
+  expandedIds.clear();
+  renderCards();
+}
+
+let sampleNum = 0;
+function addSampleCard() {
+  sampleNum++;
+  sampleCount++;
+  const types = ['internal','external'];
+  const t = types[sampleNum % 2];
+  cards.push({
+    id: sampleCount,
+    active: true,
+    docNum: `샘플팀-2026-${1000 + sampleCount}`,
+    type: t,
+    typeLabel: t === 'internal' ? '내부' : '외부',
+    title: `[샘플 ${sampleNum}] 새로 수신된 공문 제목이 이곳에 표시됩니다`,
+    sender: t === 'internal' ? '기획처장' : '외부기관장',
+    receiver: '수신자 참조',
+    issued: '2026-08-19', received: '2026-08-19',
+    deadline: '2026-09-01',
+    security: '평문 (공개)',
+    summary: '이 카드는 공문 추가 버튼으로 생성된 샘플 공문입니다. 실제 시스템에서는 AI가 분석한 공문 내용이 자동으로 채워집니다.',
+    todos: [
+      { level:'red',   icon:'ti-alert-triangle', text:'긴급 처리 필요 항목 — 담당자 즉시 확인', date:'2026-09-01' },
+      { level:'green', icon:'ti-check',          text:'일반 검토 및 보관', date:'2026-09-30' },
+    ],
+    attachments: [],
+    reply: false,
+    memo: '샘플 카드입니다. 실제 공문 분석 시 AI 에이전트가 자동으로 메모를 작성합니다.',
+  });
+  renderCards();
+  setTimeout(() => {
+    const el = document.getElementById(`card-${sampleCount}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
+}
+
+renderCards();
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+# ---------------------------------------------------------------- 비밀정보
+# FACTCHAT_API_KEY 등 API 키 — 절대 커밋 금지
+.env
+.env.*
+.streamlit/secrets.toml
+
+# ---------------------------------------------------------------- Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# ---------------------------------------------------------------- 실행 산출물 (파서가 재생성)
+# SQLite DB
+# *.db
+# *.db-journal
+# 클러스터별 통합 규정 텍스트 (export_regulations_by_cluster 가 생성)
+# regulationsByCluster/
+# 전체 규정 통합 텍스트 (파서가 생성)
+# *규정통합*.txt
+# *규정 통합*.txt
+# PDF 다운로드 캐시
+pdf_cache/
+# 실행 로그
+run_log/
+# 대시보드 분석 결과 영구 저장소
+# analysis_store.json
+# 마지막 Agent 응답 원문(디버깅용)
+last_agent_response.txt
+vibes/
+vibes.txt
+
+# ---------------------------------------------------------------- 백업/임시 파일
+*_backup.*
+*.tmp
+*.bak
+
+# ---------------------------------------------------------------- IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
