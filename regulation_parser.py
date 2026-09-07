@@ -3,7 +3,8 @@
 한양여자대학교 그룹웨어 규정집 파서
 - https://gw.hywoman.ac.kr/ekp/ruleweb/index.do 의 규정 트리를 순회하며
   규정 메타데이터 + PDF 본문 텍스트를 SQLite DB(regulations.db)에 저장
-- 재실행 시: 신규 규정 insert, 개정일자 > DB구성날짜 인 규정 update
+- 재실행 시: 신규 규정 insert, 개정일자/규정버전/첨부파일 경로가 DB 저장값과
+  달라진 규정 update (개정일자를 바꾸지 않은 첨부 PDF 교체도 감지)
 - 마지막으로 전체 텍스트를 "{N}개의 규정 통합.txt" 로 통합
 """
 
@@ -325,7 +326,8 @@ def init_db(conn):
 
 def get_existing(conn, rule_name):
     cur = conn.execute(
-        "SELECT DB구성날짜, 개정일자, 텍스트추출내용 FROM regulations WHERE 규정명 = ?",
+        "SELECT 개정일자, 규정버전, 규정파일링크, 텍스트추출내용 "
+        "FROM regulations WHERE 규정명 = ?",
         (rule_name,))
     return cur.fetchone()
 
@@ -736,11 +738,20 @@ def run_main(today):
         change_dt = (info.get("changeDt") or "").strip()
 
         existing = get_existing(conn, rule_name)
+        old_text = ""
         if existing is not None:
-            db_date, _old_change, old_text = existing
-            # 개정일자가 DB구성날짜보다 나중인 경우 업데이트,
-            # 본문 추출이 비어 있는 레코드는 재시도
-            need_update = change_dt and db_date and change_dt > db_date
+            old_change, old_version, old_link, old_text = existing
+            old_text = old_text or ""
+            file_path = info.get("ruleFilePath") or ""
+            # 사이트 메타데이터를 DB 저장값과 직접 비교해 갱신 여부 판정:
+            # 개정일자·규정버전이 달라졌거나, 개정일자를 바꾸지 않은 채
+            # 첨부 PDF만 교체된 경우(파일 경로 변경)도 감지한다.
+            # 본문 추출이 비어 있는 레코드는 재시도.
+            need_update = (
+                change_dt != (old_change or "").strip()
+                or str(info.get("ruleVersion")) != str(old_version)
+                or (file_path and file_path not in (old_link or ""))
+            )
             need_retry = not (old_text or "").strip()
             if not (need_update or need_retry):
                 log(f"[{idx}/{len(regulations)}] 변경 없음: {rule_name}")
@@ -751,6 +762,13 @@ def run_main(today):
             action = "신규추가"
 
         text = get_rule_text(info, rule_name)
+        if not text and old_text.strip():
+            # 갱신 대상인데 본문 추출에 실패한 경우: 새 메타데이터 + 옛 본문의
+            # 불일치 레코드를 만들지 않도록 기존 레코드를 그대로 두고 다음
+            # 실행에서 재시도한다.
+            log(f"[{idx}/{len(regulations)}] ! 본문 추출 실패 - 기존 레코드 유지({rule_name})")
+            n_fail += 1
+            continue
         record = build_record(cat_name, info, rule_name, text, today)
         upsert(conn, record)
         if action == "신규추가":

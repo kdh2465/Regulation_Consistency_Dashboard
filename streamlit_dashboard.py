@@ -307,8 +307,8 @@ def clear_revision_result():
 
 # ---------------------------------------------------------------- 앱 설정·비밀번호
 # 설정(부분 분석 표시 여부)은 app_settings.json 에 저장한다.
-# 비밀번호는 .env 와 .streamlit/secrets.toml 모두에 저장(없는 파일은 skip)하고,
-# 조회 우선순위는 .env → .streamlit/secrets.toml 이다.
+# 비밀번호는 .env 와 .streamlit/secrets.toml 모두에 저장(없는 파일은 skip,
+# 둘 다 없으면 .env 를 생성)하고, 조회 우선순위는 .env → .streamlit/secrets.toml 이다.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
 SECRETS_PATH = os.path.join(BASE_DIR, ".streamlit", "secrets.toml")
@@ -363,7 +363,9 @@ def _update_env(updates):
     with open(ENV_PATH, "r", encoding="utf-8") as fp:
         lines = fp.read().splitlines()
     for key, value in updates.items():
-        new_line = f"{key}={value}"
+        # '#'(주석), 공백 등이 값에 있어도 dotenv 가 온전히 읽도록 따옴표로 감싼다.
+        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+        new_line = f'{key}="{escaped}"'
         for i, line in enumerate(lines):
             if line.strip().startswith(key + "="):
                 lines[i] = new_line
@@ -399,7 +401,11 @@ def _update_secrets(updates):
 
 
 def update_passwords(updates):
-    """비밀번호를 .env 와 .streamlit/secrets.toml 모두에 저장한다(없는 파일은 skip)."""
+    """비밀번호를 .env 와 .streamlit/secrets.toml 모두에 저장한다(없는 파일은 skip).
+    두 파일이 모두 없으면 저장이 유실되지 않도록 .env 를 새로 만들어 저장한다."""
+    if not os.path.exists(ENV_PATH) and not os.path.exists(SECRETS_PATH):
+        with open(ENV_PATH, "w", encoding="utf-8"):
+            pass
     _update_env(updates)
     _update_secrets(updates)
 
